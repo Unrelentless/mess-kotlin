@@ -1,0 +1,19 @@
+    {
+        "type": "minecraft:block",
+        "pools": [
+            {
+                "rolls": 1,
+                "entries": [
+                    {
+                        "type": "minecraft:item",
+                        "name": "mess:low_limb"
+                    }
+                ],
+                "conditions": [
+                    {
+                        "condition": "minecraft:survives_explosion"
+                    }
+                ]
+            }
+        ]
+    }
