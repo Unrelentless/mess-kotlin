@@ -50,25 +50,26 @@ open class LimbBlock(settings: FabricBlockSettings, level: Level): BlockWithEnti
     }
 
     override fun onBreak(world: World, pos: BlockPos, state: BlockState, player: PlayerEntity) {
-        val blockEntity: LimbBlockEntity = world.getBlockEntity(pos) as LimbBlockEntity
+        if(world.isClient) return
 
-        if (!world.isClient && !blockEntity.inventory.isEmpty) {
-            val itemStack = ItemStack(asItem())
+        val blockEntity = world.getBlockEntity(pos) as LimbBlockEntity
+        val itemStack = ItemStack(asItem())
+
+        if (!blockEntity.inventory.isEmpty) {
             val innerStack = blockEntity.inventory.getStack()
-
             itemStack.putSubTag("BlockEntityTag", innerStack.serializeInnerStackToTag())
-
-            val itemEntity = ItemEntity(
-                    world,
-                    pos.x.toDouble() + 0.5,
-                    pos.y.toDouble() + 0.5,
-                    pos.z.toDouble() + 0.5,
-                    itemStack
-            )
-
-            itemEntity.setToDefaultPickupDelay()
-            world.spawnEntity(itemEntity)
         }
+
+        val itemEntity = ItemEntity(
+                world,
+                pos.x.toDouble() + 0.5,
+                pos.y.toDouble() + 0.5,
+                pos.z.toDouble() + 0.5,
+                itemStack
+        )
+
+        itemEntity.setToDefaultPickupDelay()
+        world.spawnEntity(itemEntity)
     }
 
     override fun getDroppedStacks(state: BlockState?, builder: LootContext.Builder?): MutableList<ItemStack> {
@@ -80,14 +81,10 @@ open class LimbBlock(settings: FabricBlockSettings, level: Level): BlockWithEnti
         super.appendTooltip(stack, world, tooltip, options)
         val compoundTag = stack.getSubTag("BlockEntityTag")
 
-        if (compoundTag != null) {
-            if (compoundTag.contains("item", 10)) {
-                val innerStack = compoundTag.deserializeInnerStack()
-
-                val mutableText = innerStack.name.shallowCopy()
-                mutableText.append(" x").append(innerStack.count.toString())
-                tooltip.add(mutableText)
-            }
+        compoundTag?.deserializeInnerStack()?.let {
+            val mutableText = it.name.shallowCopy()
+            mutableText.append(" x").append(it.count.toString())
+            tooltip.add(mutableText)
         }
     }
 
