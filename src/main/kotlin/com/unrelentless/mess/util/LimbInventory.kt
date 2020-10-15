@@ -3,37 +3,39 @@ package com.unrelentless.mess.util
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.inventory.Inventories
 import net.minecraft.inventory.SidedInventory
 import net.minecraft.item.ItemStack
-import net.minecraft.util.collection.DefaultedList
 import net.minecraft.util.math.Direction
+import kotlin.math.min
 
-class LimbInventory(size: Int, val owner: BlockEntity): SidedInventory {
-    val items: DefaultedList<ItemStack> = DefaultedList.ofSize(size, ItemStack.EMPTY)
+class LimbInventory(private val size: Int, private val owner: BlockEntity): SidedInventory {
+    private var itemStack: ItemStack = ItemStack.EMPTY
 
-    override fun clear() = items.clear()
-    override fun size(): Int = items.size
-    override fun isEmpty(): Boolean = items.isEmpty()
-    override fun getStack(slot: Int): ItemStack = items[slot]
+    fun getStack(): ItemStack = getStack(0)
+    override fun size(): Int = 1
+    override fun isEmpty(): Boolean = itemStack.isEmpty
+    override fun getStack(slot: Int): ItemStack = itemStack
     override fun canPlayerUse(player: PlayerEntity?): Boolean = true
     override fun canInsert(slot: Int, stack: ItemStack?, dir: Direction?): Boolean = true
     override fun canExtract(slot: Int, stack: ItemStack?, dir: Direction?): Boolean = true
+    override fun getMaxCountPerStack(): Int = size * itemStack.item.maxCount
+
+    override fun clear() {
+        itemStack = ItemStack.EMPTY
+    }
 
     override fun removeStack(slot: Int): ItemStack {
-        val itemStack: ItemStack = Inventories.removeStack(items, slot)
-        markDirty()
-        return itemStack
+        return removeStack(slot, itemStack.item.maxCount)
     }
 
     override fun removeStack(slot: Int, amount: Int): ItemStack {
-        val itemStack: ItemStack = Inventories.splitStack(items, slot, amount)
+        val newStack: ItemStack = itemStack.split(amount)
         markDirty()
-        return itemStack
+        return newStack
     }
 
     override fun setStack(slot: Int, stack: ItemStack) {
-        items[slot] = stack
+        itemStack = stack
         if (stack.count > maxCountPerStack) {
             stack.count = maxCountPerStack
         }
@@ -41,18 +43,25 @@ class LimbInventory(size: Int, val owner: BlockEntity): SidedInventory {
     }
 
     override fun getAvailableSlots(side: Direction?): IntArray {
-        // Just return an array of all slots
-        val result = IntArray(items.size)
-        for (i in result.indices) {
-            result[i] = i
-        }
-
-        return result
+        return IntArray(1)
     }
 
     override fun markDirty() {
         owner.markDirty()
         require(owner is BlockEntityClientSerializable)
         if (owner.world?.isClient == false) owner.sync()
+    }
+
+    fun depositStack(stack: ItemStack): ItemStack {
+        if(itemStack.isEmpty) {
+            itemStack = stack.copy()
+            stack.count = 0
+        } else if (ItemStack.areItemsEqual(itemStack, stack)) {
+            val countToDeposit = min(stack.count, maxCountPerStack - itemStack.count)
+
+            itemStack.increment(countToDeposit)
+            stack.decrement(countToDeposit)
+        }
+        return stack
     }
 }
