@@ -1,6 +1,8 @@
 package com.unrelentless.mess.block.entity
 
 import com.unrelentless.mess.util.LimbInventory
+import com.unrelentless.mess.util.deserializeLimb
+import com.unrelentless.mess.util.serializeLimb
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable
 import net.minecraft.block.BlockState
 import net.minecraft.block.InventoryProvider
@@ -20,35 +22,11 @@ open class LimbBlockEntity(type: BlockEntityType<*>, size: Int) : BlockEntity(ty
     val inventory: LimbInventory by lazy { LimbInventory(size, this) }
 
     override fun fromTag(state: BlockState?, tag: CompoundTag) {
-        if(tag.contains("item")) {
-            val compoundTag = tag.getCompound("item")
-            val item = Registry.ITEM[Identifier(compoundTag.getString("id"))]
-            val stack = ItemStack(item)
-            stack.count = compoundTag.getInt("count")
-
-            if(compoundTag.contains("tag"))
-                stack.tag = compoundTag.getCompound("tag")
-
-            inventory.setStack(0, stack)
-        }
-        super.fromTag(state, tag)
+        super.fromTag(state, tag.deserializeLimb(inventory))
     }
 
     override fun toTag(tag: CompoundTag): CompoundTag {
-        val itemStack = inventory.getStack()
-
-        if (!itemStack.isEmpty) {
-            val compoundTag = CompoundTag()
-            compoundTag.putString("id", Registry.ITEM.getId(itemStack.item).toString())
-            compoundTag.putInt("count", itemStack.count)
-
-            if (itemStack.tag != null)
-                compoundTag.put("tag", itemStack.tag?.copy())
-
-            tag.put("item", compoundTag)
-        }
-
-        return super.toTag(tag)
+        return super.toTag(tag.serializeLimb(inventory))
     }
 
     override fun fromClientTag(tag: CompoundTag) = fromTag(cachedState, tag)
@@ -56,7 +34,6 @@ open class LimbBlockEntity(type: BlockEntityType<*>, size: Int) : BlockEntity(ty
     override fun getInventory(state: BlockState?, world: WorldAccess?, pos: BlockPos?): SidedInventory = inventory
 
     override fun sync() {
-        if (world!!.isClient) return
         super.sync()
         markDirty()
     }
