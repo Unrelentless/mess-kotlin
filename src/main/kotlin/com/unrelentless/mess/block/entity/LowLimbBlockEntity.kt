@@ -16,16 +16,14 @@ class LowLimbBlockEntity: LimbBlockEntity(ENTITY_TYPE, 8) {
 
     companion object: Clientside {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "low_limb_entity")
-        val ENTITY_TYPE: BlockEntityType<LowLimbBlockEntity> = registerBlockEntity(IDENTIFIER) {
+        val ENTITY_TYPE = registerBlockEntity(IDENTIFIER) {
             BlockEntityType.Builder
                     .create(Supplier { LowLimbBlockEntity() }, LowLimbBlock.BLOCK)
                     .build(null)
         }
 
         override fun renderOnClient() {
-            BlockEntityRendererRegistry.INSTANCE.register(ENTITY_TYPE) { dispatcher: BlockEntityRenderDispatcher ->
-                LimbEntityRenderer(dispatcher)
-            }
+            BlockEntityRendererRegistry.INSTANCE.register(ENTITY_TYPE) { LimbEntityRenderer(it) }
         }
     }
 

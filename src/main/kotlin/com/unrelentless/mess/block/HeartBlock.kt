@@ -9,10 +9,19 @@ import net.minecraft.block.BlockRenderType
 import net.minecraft.block.BlockState
 import net.minecraft.block.BlockWithEntity
 import net.minecraft.block.entity.BlockEntity
+import net.minecraft.entity.player.PlayerEntity
+import net.minecraft.inventory.Inventory
 import net.minecraft.item.Item
 import net.minecraft.item.ItemGroup
+import net.minecraft.util.ActionResult
+import net.minecraft.util.Hand
 import net.minecraft.util.Identifier
+import net.minecraft.util.hit.BlockHitResult
+import net.minecraft.util.math.BlockPos
 import net.minecraft.world.BlockView
+import net.minecraft.world.World
+import java.util.*
+
 
 class HeartBlock: BlockWithEntity(heartBlockSettings) {
     companion object {
@@ -23,4 +32,16 @@ class HeartBlock: BlockWithEntity(heartBlockSettings) {
 
     override fun createBlockEntity(world: BlockView?): BlockEntity? = HeartBlockEntity()
     override fun getRenderType(state: BlockState?): BlockRenderType = BlockRenderType.MODEL
+
+    override fun onUse(state: BlockState?, world: World, pos: BlockPos, player: PlayerEntity, hand: Hand, hit: BlockHitResult): ActionResult {
+        if(world.isClient) return ActionResult.SUCCESS
+
+        state?.createScreenHandlerFactory(world, pos).let {
+            if (world.getBlockEntity(pos) is HeartBlockEntity) {
+                player.openHandledScreen(it)
+            }
+        }
+
+        return ActionResult.SUCCESS
+    }
 }

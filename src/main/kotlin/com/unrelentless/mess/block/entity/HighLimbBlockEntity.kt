@@ -16,16 +16,14 @@ class HighLimbBlockEntity: LimbBlockEntity(ENTITY_TYPE, 4096) {
 
     companion object: Clientside {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "high_limb_entity")
-        val ENTITY_TYPE: BlockEntityType<HighLimbBlockEntity> = registerBlockEntity(IDENTIFIER) {
+        val ENTITY_TYPE = registerBlockEntity(IDENTIFIER) {
             BlockEntityType.Builder
                     .create(Supplier { HighLimbBlockEntity() }, HighLimbBlock.BLOCK)
                     .build(null)
         }
 
         override fun renderOnClient() {
-            BlockEntityRendererRegistry.INSTANCE.register(ENTITY_TYPE) { dispatcher: BlockEntityRenderDispatcher ->
-                LimbEntityRenderer(dispatcher)
-            }
+            BlockEntityRendererRegistry.INSTANCE.register(ENTITY_TYPE) { LimbEntityRenderer(it) }
         }
     }
 }

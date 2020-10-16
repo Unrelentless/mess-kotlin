@@ -7,6 +7,7 @@ import com.unrelentless.mess.block.MidLimbBlock
 import com.unrelentless.mess.block.entity.HighLimbBlockEntity
 import com.unrelentless.mess.block.entity.LowLimbBlockEntity
 import com.unrelentless.mess.block.entity.MidLimbBlockEntity
+import com.unrelentless.mess.client.gui.screen.MessScreen
 import com.unrelentless.mess.util.Clientside
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.api.EnvType
@@ -42,13 +43,17 @@ class Mess : ModInitializer, ClientModInitializer {
                 MidLimbBlockEntity.Companion,
                 HighLimbBlockEntity.Companion
         )
+
+        val SCREENS: List<Clientside> = listOf(
+                MessScreen.Companion
+        )
     }
 
     override fun onInitialize() {}
 
     @Environment(EnvType.CLIENT)
     override fun onInitializeClient() {
-        listOf(BLOCKS, ITEMS, ENTITIES)
+        listOf(BLOCKS, ITEMS, ENTITIES, SCREENS)
                 .flatten()
                 .filterIsInstance<Clientside>()
                 .forEach{it.renderOnClient()}

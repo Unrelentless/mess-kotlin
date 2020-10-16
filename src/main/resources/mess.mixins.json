@@ -3,7 +3,7 @@
   "package": "com.unrelentless.mess.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "MessMixin"
+    "MessMinecraftClientMixin"
   ],
   "injectors": {
     "defaultRequire": 1
