@@ -8,7 +8,7 @@ import net.minecraft.item.ItemStack
 import net.minecraft.util.math.Direction
 import kotlin.math.min
 
-class LimbInventory(private val size: Int, private val owner: BlockEntity): SidedInventory {
+class LimbInventory(private val size: Int, private val owner: BlockEntity?): SidedInventory {
     private var itemStack: ItemStack = ItemStack.EMPTY
 
     fun getStack(): ItemStack = getStack(0)
@@ -47,9 +47,9 @@ class LimbInventory(private val size: Int, private val owner: BlockEntity): Side
     }
 
     override fun markDirty() {
-        owner.markDirty()
+        owner?.markDirty()
         require(owner is BlockEntityClientSerializable)
-        if (owner.world?.isClient == false) owner.sync()
+        if (owner?.world?.isClient == false) owner?.sync()
     }
 
     fun depositStack(stack: ItemStack): ItemStack {

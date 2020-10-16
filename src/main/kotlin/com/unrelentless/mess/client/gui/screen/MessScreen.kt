@@ -1,5 +1,6 @@
 package com.unrelentless.mess.client.gui.screen
 
+import com.mojang.blaze3d.systems.RenderSystem
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.client.render.item.MessScreenItemRenderer
 import com.unrelentless.mess.mixin.MessMinecraftClientMixin
@@ -59,7 +60,7 @@ class MessScreen(
     }
 
     override fun drawBackground(matrices: MatrixStack, delta: Float, mouseX: Int, mouseY: Int) {
-//        RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f)
+        RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f)
         client?.textureManager?.bindTexture(TEXTURE)
         val i = (width - backgroundWidth) / 2
         val j = (height - backgroundHeight) / 2
