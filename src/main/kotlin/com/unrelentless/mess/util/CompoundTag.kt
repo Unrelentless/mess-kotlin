@@ -11,6 +11,7 @@ fun CompoundTag.serializeLimb(limbInventory: LimbInventory): CompoundTag {
     if(itemStack.isEmpty) return this
 
     val compoundTag = CompoundTag()
+
     compoundTag.putString("id", Registry.ITEM.getId(itemStack.item).toString())
     compoundTag.putInt("count", itemStack.count)
 
@@ -28,6 +29,7 @@ fun CompoundTag.deserializeLimb(limbInventory: LimbInventory): CompoundTag {
     val compoundTag = this.getCompound("item")
     val item = Registry.ITEM[Identifier(compoundTag.getString("id"))]
     val stack = ItemStack(item)
+
     stack.count = compoundTag.getInt("count")
 
     if(compoundTag.contains("tag"))

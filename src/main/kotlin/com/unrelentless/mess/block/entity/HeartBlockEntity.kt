@@ -15,23 +15,22 @@ import net.minecraft.text.TranslatableText
 import net.minecraft.util.Identifier
 import java.util.function.Supplier
 
-
 class HeartBlockEntity: BlockEntity(ENTITY_TYPE), NamedScreenHandlerFactory {
 
     companion object {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "heart_entity")
-        val ENTITY_TYPE = registerBlockEntity(IDENTIFIER) {
+        val ENTITY_TYPE: BlockEntityType<HeartBlockEntity> = registerBlockEntity(IDENTIFIER) {
             BlockEntityType.Builder
                     .create(Supplier { HeartBlockEntity() }, HeartBlock.BLOCK)
                     .build(null)
         }
     }
 
-    override fun createMenu(syncId: Int,
-                            playerInventory: PlayerInventory,
-                            player: PlayerEntity
-    ): ScreenHandler? = MessScreenHandler(syncId, playerInventory)
+    override fun createMenu(
+            syncId: Int,
+            playerInventory: PlayerInventory,
+            player: PlayerEntity
+    ): ScreenHandler? = MessScreenHandler(syncId, playerInventory);
 
-
-    override fun getDisplayName(): Text? = TranslatableText("container." + Mess.IDENTIFIER.toString() + ".mess")
+    override fun getDisplayName(): Text = TranslatableText("container." + Mess.IDENTIFIER + ".mess");
 }

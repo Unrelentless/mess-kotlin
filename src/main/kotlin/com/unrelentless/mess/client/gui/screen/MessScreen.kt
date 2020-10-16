@@ -1,6 +1,5 @@
 package com.unrelentless.mess.client.gui.screen
 
-import com.mojang.blaze3d.systems.RenderSystem
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.client.render.item.MessScreenItemRenderer
 import com.unrelentless.mess.mixin.MessMinecraftClientMixin
@@ -30,13 +29,13 @@ class MessScreen(
         }
     }
 
-    private val slot_size = 18
-    private val slot_origin_x = 238
-    private val slot_origin_y = 0
+    private val slotSize = 18
+    private val slotOriginX = 238
+    private val slotOriginY = 0
 
     init {
-        this.backgroundHeight = 203;
-        this.backgroundWidth = 195;
+        this.backgroundHeight = 203
+        this.backgroundWidth = 195
     }
 
     override fun init(client: MinecraftClient, width: Int, height: Int) {
@@ -59,14 +58,14 @@ class MessScreen(
         )
     }
 
-    override fun drawBackground(matrices: MatrixStack?, delta: Float, mouseX: Int, mouseY: Int) {
-        RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f)
+    override fun drawBackground(matrices: MatrixStack, delta: Float, mouseX: Int, mouseY: Int) {
+//        RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f)
         client?.textureManager?.bindTexture(TEXTURE)
         val i = (width - backgroundWidth) / 2
         val j = (height - backgroundHeight) / 2
         this.drawTexture(matrices, i, j, 0, 0, backgroundWidth, backgroundHeight)
 
-        drawSlots(matrices, delta, mouseX, mouseY)
+        drawSlots(matrices)
     }
 
     override fun render(matrices: MatrixStack?, mouseX: Int, mouseY: Int, delta: Float) {
@@ -75,7 +74,7 @@ class MessScreen(
         drawMouseoverTooltip(matrices, mouseX, mouseY)
     }
 
-    private fun drawSlots(matrices: MatrixStack?, delta: Float, mouseX: Int, mouseY: Int) {
+    private fun drawSlots(matrices: MatrixStack) {
         client?.textureManager?.bindTexture(TEXTURE_SLOT)
 
         val totalItemsToShow = handler.slots.size
@@ -93,12 +92,12 @@ class MessScreen(
             for (column in 0 until columnMax) {
                 this.drawTexture(
                         matrices,
-                        xPos + slot_size * column,
-                        yPos + slot_size * row,
-                        slot_origin_x,
-                        slot_origin_y,
-                        slot_size,
-                        slot_size
+                        xPos + slotSize * column,
+                        yPos + slotSize * row,
+                        slotOriginX,
+                        slotOriginY,
+                        slotSize,
+                        slotSize
                 )
             }
         }

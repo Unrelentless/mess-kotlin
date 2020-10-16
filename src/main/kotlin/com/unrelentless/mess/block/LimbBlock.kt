@@ -26,8 +26,7 @@ import net.minecraft.world.BlockView
 import net.minecraft.world.World
 
 
-open class LimbBlock(settings: FabricBlockSettings, level: Level): BlockWithEntity(settings.nonOpaque()) {
-    private val level: Level = level;
+open class LimbBlock(settings: FabricBlockSettings, private val level: Level): BlockWithEntity(settings.nonOpaque()) {
 
     override fun createBlockEntity(world: BlockView?): BlockEntity? = level.blockEntity
     override fun getRenderType(state: BlockState?): BlockRenderType = BlockRenderType.MODEL

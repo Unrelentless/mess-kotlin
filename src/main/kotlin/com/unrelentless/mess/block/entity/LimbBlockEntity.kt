@@ -9,11 +9,8 @@ import net.minecraft.block.InventoryProvider
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.block.entity.BlockEntityType
 import net.minecraft.inventory.SidedInventory
-import net.minecraft.item.ItemStack
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.util.Identifier
 import net.minecraft.util.math.BlockPos
-import net.minecraft.util.registry.Registry
 import net.minecraft.world.WorldAccess
 
 

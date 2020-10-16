@@ -9,6 +9,7 @@ enum class Level {
     LOW, MID, HIGH;
 
     val blockEntity: LimbBlockEntity
+
     get() = when(this) {
             LOW -> LowLimbBlockEntity()
             MID -> MidLimbBlockEntity()
