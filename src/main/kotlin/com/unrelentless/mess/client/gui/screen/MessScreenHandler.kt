@@ -5,10 +5,7 @@ import com.unrelentless.mess.util.LimbInventory
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
-import net.minecraft.inventory.Inventory
-import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
-import net.minecraft.item.Items
 import net.minecraft.network.PacketByteBuf
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.ScreenHandlerType
@@ -38,31 +35,47 @@ class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, val limbs
     override fun canUse(player: PlayerEntity?): Boolean = true
     override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity): ItemStack {
         when(actionType) {
-            SlotActionType.QUICK_MOVE -> transferSlot(playerEntity, index)
-            SlotActionType.PICKUP -> pickup(index, mouseButton, playerEntity)
-            SlotActionType.PICKUP_ALL -> pickupAll(index, mouseButton, playerEntity)
+            SlotActionType.QUICK_MOVE -> return transferSlot(playerEntity, index)
+            SlotActionType.PICKUP -> return pickup(index, mouseButton, playerEntity)
+            SlotActionType.PICKUP_ALL -> return pickupAll(index, mouseButton, playerEntity)
         }
 
         return super.onSlotClick(index, mouseButton, actionType, playerEntity)
     }
 
-    override fun transferSlot(player: PlayerEntity?, index: Int): ItemStack {
+    override fun transferSlot(player: PlayerEntity, index: Int): ItemStack {
         val slot = this.slots[index]
 
         if(limbs == null) return ItemStack.EMPTY
         if(!slot.hasStack()) return ItemStack.EMPTY
 
         val slotStack = slot.stack
-        val copiedStack = slotStack.copy()
+        var stackToReturn = slotStack.copy()
 
         // Slot clicked in custom inventory
         if(index < limbs.size) {
-            val count = min(slotStack.item.maxCount, slotStack.count)
+            val inventorySlots = slots.filterIndexed{index, _ ->  index >= limbs.size}
+            val slotsWithItems = inventorySlots.filter { ItemStack.areItemsEqual(slotStack, it.stack) }
+            val iterator = slotsWithItems.iterator()
+            val stackToDeposit = ItemStack(slotStack.item, min(slotStack.item.maxCount, slotStack.count))
+            stackToReturn = stackToDeposit.copy()
 
-            if(!insertItem(ItemStack(slotStack.item, count), this.limbs.size, this.slots.size, true))
-                return ItemStack.EMPTY
+            // Fill in inventories that already have items
+            while(iterator.hasNext() && !stackToDeposit.isEmpty) {
+                val nextSlot = iterator.next()
+                val countToDeposit = min(stackToDeposit.count, nextSlot.inventory.maxCountPerStack - nextSlot.stack.count)
 
-            slotStack.decrement(count)
+                nextSlot.stack.increment(countToDeposit)
+                slotStack.decrement(countToDeposit)
+            }
+
+            // Fill empty slot with remainder
+            if(!stackToDeposit.isEmpty) {
+                val emptySlot = inventorySlots.find { !it.hasStack() }
+
+                emptySlot?.stack = stackToDeposit
+                slotStack.decrement(stackToDeposit.count)
+            }
         } else {
             val limbSlots = slots.filterIndexed{index, _ ->  index < this.limbs.size}
             val slotsWithItems = limbSlots.filter { ItemStack.areItemsEqual(slotStack, it.stack) }
@@ -80,14 +93,8 @@ class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, val limbs
             }
         }
 
-        if(slotStack.isEmpty)
-            slot.stack = ItemStack.EMPTY
-        else
-            slot.markDirty()
-
-
-        // Return leftover stack
-        return copiedStack
+        slot.markDirty()
+        return stackToReturn
     }
 
     private fun createSlots(playerInventory: PlayerInventory) {
@@ -102,7 +109,7 @@ class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, val limbs
         val maxRows = 3
         val rowTotal = min(1 + limbs.size / 9, maxRows)
 
-        // Custom inv
+        // MESS inv
         for (row in 0 until rowTotal) {
             val columnMax = min(limbs.size - maxColumns * row, maxColumns)
             for (column in 0 until columnMax) {
