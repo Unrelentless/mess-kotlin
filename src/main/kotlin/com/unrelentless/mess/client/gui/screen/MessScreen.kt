@@ -78,7 +78,7 @@ class MessScreen(
     private fun drawSlots(matrices: MatrixStack) {
         client?.textureManager?.bindTexture(TEXTURE_SLOT)
 
-        val totalItemsToShow = handler.slots.size
+        val totalItemsToShow = handler.limbs?.size ?: 0
 
         val xPos = (width - backgroundWidth) / 2 + 8
         val yPos = (height - backgroundHeight) / 2 + 17

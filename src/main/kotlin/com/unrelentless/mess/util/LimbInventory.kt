@@ -64,6 +64,8 @@ class LimbInventory(private val size: Int, private val owner: BlockEntity?): Sid
             itemStack.increment(countToDeposit)
             stack.decrement(countToDeposit)
         }
+
+        markDirty()
         return stack
     }
 }

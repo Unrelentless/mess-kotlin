@@ -6,15 +6,19 @@ import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.inventory.Inventory
+import net.minecraft.item.Item
+import net.minecraft.item.ItemStack
+import net.minecraft.item.Items
 import net.minecraft.network.PacketByteBuf
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.ScreenHandlerType
 import net.minecraft.screen.slot.Slot
+import net.minecraft.screen.slot.SlotActionType
 import net.minecraft.util.Identifier
 import kotlin.math.min
 
 
-class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, private val limbs: Array<LimbInventory>?) : ScreenHandler(HANDLER_TYPE, syncId) {
+class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, val limbs: Array<LimbInventory>?) : ScreenHandler(HANDLER_TYPE, syncId) {
 
     companion object {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "mess_screen_handler")
@@ -32,11 +36,64 @@ class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, private v
     }
 
     override fun canUse(player: PlayerEntity?): Boolean = true
+    override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity): ItemStack {
+        when(actionType) {
+            SlotActionType.QUICK_MOVE -> transferSlot(playerEntity, index)
+            SlotActionType.PICKUP -> pickup(index, mouseButton, playerEntity)
+            SlotActionType.PICKUP_ALL -> pickupAll(index, mouseButton, playerEntity)
+        }
+
+        return super.onSlotClick(index, mouseButton, actionType, playerEntity)
+    }
+
+    override fun transferSlot(player: PlayerEntity?, index: Int): ItemStack {
+        val slot = this.slots[index]
+
+        if(limbs == null) return ItemStack.EMPTY
+        if(!slot.hasStack()) return ItemStack.EMPTY
+
+        val slotStack = slot.stack
+        val copiedStack = slotStack.copy()
+
+        // Slot clicked in custom inventory
+        if(index < limbs.size) {
+            val count = min(slotStack.item.maxCount, slotStack.count)
+
+            if(!insertItem(ItemStack(slotStack.item, count), this.limbs.size, this.slots.size, true))
+                return ItemStack.EMPTY
+
+            slotStack.decrement(count)
+        } else {
+            val limbSlots = slots.filterIndexed{index, _ ->  index < this.limbs.size}
+            val slotsWithItems = limbSlots.filter { ItemStack.areItemsEqual(slotStack, it.stack) }
+            val iterator = slotsWithItems.iterator()
+
+            // Fill in inventories that already have items
+            while(iterator.hasNext() && !slotStack.isEmpty) {
+                (iterator.next().inventory as LimbInventory).depositStack(slotStack)
+            }
+
+            // Fill empty slot with remainder
+            if(!slotStack.isEmpty) {
+                val emptySlot = limbSlots.find { !it.hasStack() }
+                (emptySlot?.inventory as LimbInventory).depositStack(slotStack)
+            }
+        }
+
+        if(slotStack.isEmpty)
+            slot.stack = ItemStack.EMPTY
+        else
+            slot.markDirty()
+
+
+        // Return leftover stack
+        return copiedStack
+    }
 
     private fun createSlots(playerInventory: PlayerInventory) {
         val limbs = limbs ?: emptyArray()
 
-        var column: Int
+        // Magic numbers
         val xOffset = 9
         val yOffsetInv = 18
         val yOffsetPlayerInv = 121
@@ -44,37 +101,46 @@ class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, private v
         val maxColumns = 9
         val maxRows = 3
         val rowTotal = min(1 + limbs.size / 9, maxRows)
-        var row = 0
 
-        while (row < rowTotal) {
+        // Custom inv
+        for (row in 0 until rowTotal) {
             val columnMax = min(limbs.size - maxColumns * row, maxColumns)
-            column = 0
-            while (column < columnMax) {
+            for (column in 0 until columnMax) {
                 val index = column + row * 9
                 addSlot(Slot(limbs[index], index, xOffset + column * 18, yOffsetInv + row * 18))
-                ++column
             }
-            ++row
         }
 
-
-        row = 0
-
-        while (row < 3) {
-            column = 0
-            while (column < 9) {
-                addSlot(Slot(playerInventory, column + row * 9 + 9, xOffset + column * 18,
-                        yOffsetPlayerInv + row * 18))
-                ++column
+        // Player inv
+        for(row in 0 until 3) {
+            for (column in 0 until 9) {
+                addSlot(Slot(
+                        playerInventory,
+                        column + row * 9 + 9,
+                        xOffset + column * 18,
+                        yOffsetPlayerInv + row * 18)
+                )
             }
-            ++row
         }
 
-        row = 0
-
-        while (row < 9) {
+        // Player hotbar
+        for(row in 0 until 9) {
             addSlot(Slot(playerInventory, row, xOffset + row * 18, yOffsetPlayerHotbar))
-            ++row
         }
+    }
+
+    private fun pickup(index: Int, mouseButton: Int, playerEntity: PlayerEntity): ItemStack {
+
+
+
+        return ItemStack.EMPTY
+
+    }
+
+    private fun pickupAll(index: Int, mouseButton: Int, playerEntity: PlayerEntity): ItemStack {
+
+
+
+        return ItemStack.EMPTY
     }
 }

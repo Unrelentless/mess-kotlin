@@ -14,7 +14,7 @@ import net.minecraft.util.math.BlockPos
 import net.minecraft.world.WorldAccess
 
 
-open class LimbBlockEntity(type: BlockEntityType<*>, size: Int) : BlockEntity(type), BlockEntityClientSerializable, InventoryProvider {
+open class LimbBlockEntity(type: BlockEntityType<*>, val size: Int) : BlockEntity(type), BlockEntityClientSerializable, InventoryProvider {
 
     val inventory: LimbInventory by lazy { LimbInventory(size, this) }
 

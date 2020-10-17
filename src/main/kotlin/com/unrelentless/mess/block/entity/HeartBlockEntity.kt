@@ -50,7 +50,7 @@ class HeartBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     override fun getDisplayName(): Text = TranslatableText("container." + Mess.IDENTIFIER + ".mess")
 
     override fun writeScreenOpeningData(serverPlayerEntity: ServerPlayerEntity?, packetByteBuf: PacketByteBuf?) {
-        val sizes = limbs?.map{it.inventory.maxCountPerStack}?.toIntArray()
+        val sizes = limbs?.map{it.size}?.toIntArray()
         packetByteBuf?.writeIntArray(sizes)
     }
 
