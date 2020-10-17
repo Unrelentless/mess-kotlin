@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.inventory.Inventory
+import net.minecraft.network.PacketByteBuf
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.ScreenHandlerType
 import net.minecraft.screen.slot.Slot
@@ -13,17 +14,17 @@ import net.minecraft.util.Identifier
 import kotlin.math.min
 
 
-class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, val limbs: Array<Inventory>) : ScreenHandler(HANDLER_TYPE, syncId) {
+class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, private val limbs: Array<LimbInventory>?) : ScreenHandler(HANDLER_TYPE, syncId) {
 
     companion object {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "mess_screen_handler")
-        val HANDLER_TYPE: ScreenHandlerType<MessScreenHandler> = ScreenHandlerRegistry.registerSimple(IDENTIFIER, ::MessScreenHandler)
+        val HANDLER_TYPE: ScreenHandlerType<MessScreenHandler> = ScreenHandlerRegistry.registerExtended(IDENTIFIER, ::MessScreenHandler)
     }
 
-    constructor(syncId: Int, playerInventory: PlayerInventory): this(
+    constructor(syncId: Int, playerInventory: PlayerInventory, buf: PacketByteBuf): this(
             syncId,
             playerInventory,
-            Array<Inventory>(9) {LimbInventory(8, null)}
+            buf.readIntArray().map { LimbInventory(it, null) }.toTypedArray()
     )
 
     init {
@@ -33,6 +34,8 @@ class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, val limbs
     override fun canUse(player: PlayerEntity?): Boolean = true
 
     private fun createSlots(playerInventory: PlayerInventory) {
+        val limbs = limbs ?: emptyArray()
+
         var column: Int
         val xOffset = 9
         val yOffsetInv = 18

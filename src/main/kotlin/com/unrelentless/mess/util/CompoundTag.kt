@@ -7,8 +7,6 @@ import net.minecraft.util.registry.Registry
 
 fun CompoundTag.serializeLimb(limbInventory: LimbInventory): CompoundTag {
     val itemStack = limbInventory.getStack()
-    
-    if(itemStack.isEmpty) return this
 
     val compoundTag = CompoundTag()
 
