@@ -50,32 +50,15 @@ class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, val limbs
         if(!slot.hasStack()) return ItemStack.EMPTY
 
         val slotStack = slot.stack
-        var stackToReturn = slotStack.copy()
 
-        // Slot clicked in custom inventory
+        // Slot clicked in MESS inventory
         if(index < limbs.size) {
-            val inventorySlots = slots.filterIndexed{index, _ ->  index >= limbs.size}
-            val slotsWithItems = inventorySlots.filter { ItemStack.areItemsEqual(slotStack, it.stack) }
-            val iterator = slotsWithItems.iterator()
-            val stackToDeposit = ItemStack(slotStack.item, min(slotStack.item.maxCount, slotStack.count))
-            stackToReturn = stackToDeposit.copy()
+            val count = min(slotStack.item.maxCount, slotStack.count)
 
-            // Fill in inventories that already have items
-            while(iterator.hasNext() && !stackToDeposit.isEmpty) {
-                val nextSlot = iterator.next()
-                val countToDeposit = min(stackToDeposit.count, nextSlot.inventory.maxCountPerStack - nextSlot.stack.count)
+            if(!insertItem(ItemStack(slotStack.item, count), this.limbs.size, this.slots.size, true))
+                return ItemStack.EMPTY
 
-                nextSlot.stack.increment(countToDeposit)
-                slotStack.decrement(countToDeposit)
-            }
-
-            // Fill empty slot with remainder
-            if(!stackToDeposit.isEmpty) {
-                val emptySlot = inventorySlots.find { !it.hasStack() }
-
-                emptySlot?.stack = stackToDeposit
-                slotStack.decrement(stackToDeposit.count)
-            }
+            slotStack.decrement(count)
         } else {
             val limbSlots = slots.filterIndexed{index, _ ->  index < this.limbs.size}
             val slotsWithItems = limbSlots.filter { ItemStack.areItemsEqual(slotStack, it.stack) }
@@ -89,12 +72,12 @@ class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, val limbs
             // Fill empty slot with remainder
             if(!slotStack.isEmpty) {
                 val emptySlot = limbSlots.find { !it.hasStack() }
-                (emptySlot?.inventory as LimbInventory).depositStack(slotStack)
+                (emptySlot?.inventory as? LimbInventory)?.depositStack(slotStack)
             }
         }
 
         slot.markDirty()
-        return stackToReturn
+        return slotStack
     }
 
     private fun createSlots(playerInventory: PlayerInventory) {
