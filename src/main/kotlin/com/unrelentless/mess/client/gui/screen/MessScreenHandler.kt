@@ -54,8 +54,10 @@ class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, val limbs
         // Slot clicked in MESS inventory
         if(index < maxMessInvSize) {
             val count = min(slotStack.item.maxCount, slotStack.count)
+            val itemStackCopy = slotStack.copy()
+            itemStackCopy.count = count
 
-            if(!insertItem(ItemStack(slotStack.item, count), maxMessInvSize, this.slots.size, true))
+            if(!insertItem(itemStackCopy, maxMessInvSize, this.slots.size, true))
                 return ItemStack.EMPTY
 
             slotStack.decrement(count)
@@ -141,11 +143,15 @@ class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, val limbs
             // Deposit stack
             if(!cursorStack.isEmpty) {
                 if(slotStack.isEmpty || canStacksCombine(slotStack, cursorStack)) {
-                    slotStack = ItemStack(cursorStack.item, slotStack.count + count)
+                    val itemStackCopy = slotStack.copy()
+                    itemStackCopy.count = count
+                    slotStack = itemStackCopy
                     cursorStack.decrement(count)
                 }
             } else {
-                cursorStack = ItemStack(slotStack.item, count)
+                val itemStackCopy = slotStack.copy()
+                itemStackCopy.count = count
+                cursorStack = itemStackCopy
                 playerEntity.inventory.cursorStack = cursorStack
                 slotStack.decrement(count)
             }
