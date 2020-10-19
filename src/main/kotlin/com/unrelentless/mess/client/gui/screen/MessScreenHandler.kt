@@ -95,7 +95,7 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
 
             slotStack.decrement(count)
         } else {
-            val limbSlots = slots.filterIndexed{ _,_ ->  index < limbs.size}
+            val limbSlots = slots.filterIndexed{ filterIndex,_ ->  filterIndex < limbs.size}
             val slotsWithItems = limbSlots.filter { ItemStack.areItemsEqual(slotStack, it.stack) }
             val iterator = slotsWithItems.iterator()
 
@@ -163,8 +163,8 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
         }
 
         val slot = this.slots[index]
-        val slotStack = slot.stack.copy()
-        val cursorStack = playerEntity.inventory.cursorStack.copy()
+        val slotStack = slot.stack
+        val cursorStack = playerEntity.inventory.cursorStack
 
         if(index < limbsToDisplay.size) {
             if(!cursorStack.isEmpty) {
@@ -173,21 +173,9 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
                 val count = min(slotStack.item.maxCount, slotStack.count)
                 playerEntity.inventory.cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
             }
+            return slotStack
         } else {
-            if(canStacksCombine(slotStack, cursorStack)) {
-                val itemStackLarge = if(cursorStack.count > slotStack.count) cursorStack else slotStack
-                val itemStackSmall = if(cursorStack.count < slotStack.count) cursorStack else slotStack
-
-                itemStackSmall.increment(itemStackLarge.split(itemStackLarge.count - itemStackSmall.count).count)
-            } else if(cursorStack.isEmpty || slotStack.isEmpty) {
-                var emptyItemStack = if(cursorStack.isEmpty) cursorStack else slotStack
-                val fullItemStack = if(!cursorStack.isEmpty) cursorStack else slotStack
-
-                emptyItemStack = fullItemStack.split(fullItemStack.count)
-            } else {
-                playerInventory.cursorStack = slotStack
-                slot.stack = cursorStack
-            }
+            return super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, playerEntity)
         }
 
         return ItemStack.EMPTY
