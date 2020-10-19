@@ -1,17 +1,14 @@
 package com.unrelentless.mess.client.gui.screen
 
 import com.unrelentless.mess.Mess
-import com.unrelentless.mess.block.LimbBlock
 import com.unrelentless.mess.util.LimbInventory
+import com.unrelentless.mess.util.LimbSlot
 import io.netty.buffer.Unpooled
 import net.fabricmc.fabric.api.network.ClientSidePacketRegistry
 import net.fabricmc.fabric.api.network.ServerSidePacketRegistry
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
-import net.minecraft.block.Block
-import net.minecraft.client.MinecraftClient
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
-import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.network.PacketByteBuf
 import net.minecraft.screen.ScreenHandler
@@ -56,31 +53,32 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
             createNewSlots()
         }
 
-    val limbsToDisplay: Array<LimbInventory>?
-        get() {
-            val limbs = limbs.filterIndexed { index, _ ->
-                val min = scrolledRows * MessScreen.COLUMNS
-                val max = min(this.limbs.size, MessScreen.INV_SIZE + min)
-
-                (min until max).contains(index)
-            }?.toTypedArray()
-
-            return limbs
-        }
+    val limbsToDisplay: Array<LimbInventory>
+        get() = this.limbs.filterIndexed { index, _ ->
+            val min = scrolledRows * MessScreen.COLUMNS
+            val max = min(this.limbs.size, MessScreen.INV_SIZE + min)
+            (min until max).contains(index)
+        }.toTypedArray()
 
     override fun canUse(player: PlayerEntity?): Boolean = true
+
     override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity): ItemStack {
+        if(index == -1) return ItemStack.EMPTY
+
         when(actionType) {
             SlotActionType.QUICK_MOVE -> return transferSlot(playerEntity, index)
             SlotActionType.PICKUP -> return pickup(index, mouseButton, playerEntity)
+            else -> super.onSlotClick(index, mouseButton, actionType, playerEntity)
+            // TODO: Implement custom pickupAll or quickCraft to prevent limbs being deposited. Test to see which.
+//            SlotActionType.PICKUP_ALL -> return pickupAll(index, mouseButton, playerEntity)
+//            SlotActionType.QUICK_CRAFT -> return quickCraft(index, mouseButton, playerEntity)
         }
-
         return super.onSlotClick(index, mouseButton, actionType, playerEntity)
     }
 
     override fun transferSlot(player: PlayerEntity, index: Int): ItemStack {
         val slot = this.slots[index]
-        val limbs = limbsToDisplay ?: return ItemStack.EMPTY
+        val limbs = limbsToDisplay
 
         if(!slot.hasStack()) return ItemStack.EMPTY
 
@@ -97,7 +95,7 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
 
             slotStack.decrement(count)
         } else {
-            val limbSlots = slots.filterIndexed{ index, _ ->  index < limbs.size}
+            val limbSlots = slots.filterIndexed{ _,_ ->  index < limbs.size}
             val slotsWithItems = limbSlots.filter { ItemStack.areItemsEqual(slotStack, it.stack) }
             val iterator = slotsWithItems.iterator()
 
@@ -120,7 +118,7 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
     private fun createNewSlots() {
         slots.clear()
 
-        val limbs = limbsToDisplay ?: emptyArray()
+        val limbs = limbsToDisplay
 
         // Magic numbers
         val xOffset = 9
@@ -135,7 +133,7 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
 
             for (column in 0 until columnMax) {
                 val index = column + row * MessScreen.COLUMNS
-                addSlot(Slot(limbs[index], index, xOffset + column * 18, yOffsetInv + row * 18))
+                addSlot(LimbSlot(limbs[index], index, xOffset + column * 18, yOffsetInv + row * 18))
             }
         }
 
@@ -155,52 +153,44 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
         for(row in 0 until 9) {
             addSlot(Slot(playerInventory, row, xOffset + row * 18, yOffsetPlayerHotbar))
         }
-
-        slots.forEach(Slot::markDirty)
     }
 
     private fun pickup(index: Int, mouseButton: Int, playerEntity: PlayerEntity): ItemStack {
-        if(index == -1) return ItemStack.EMPTY
-        val limbs = limbsToDisplay ?: return ItemStack.EMPTY
+        if (index == -999) {
+            val stack = if(mouseButton == 0) playerInventory.cursorStack else playerInventory.cursorStack.split(1)
+            playerEntity.dropItem(stack, true)
+            return ItemStack.EMPTY
+        }
 
         val slot = this.slots[index]
-        var slotStack = slot.stack
-        val count = min(slotStack.item.maxCount, slotStack.count)
-        var cursorStack = playerEntity.inventory.cursorStack
+        val slotStack = slot.stack.copy()
+        val cursorStack = playerEntity.inventory.cursorStack.copy()
 
-        if(index < limbs.size) {
-            // Deposit stack
+        if(index < limbsToDisplay.size) {
             if(!cursorStack.isEmpty) {
-                if(Block.getBlockFromItem(cursorStack.item) is LimbBlock) {
-                    return ItemStack.EMPTY
-                } else {
-                    slotStack = ((slot.inventory) as LimbInventory).depositStack(cursorStack)
-                }
+               ((slot.inventory) as LimbInventory).depositStack(cursorStack)
             } else {
-                cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
-                playerEntity.inventory.cursorStack = cursorStack
+                val count = min(slotStack.item.maxCount, slotStack.count)
+                playerEntity.inventory.cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
             }
-            // Slot in player inventory
         } else {
-            // Deposit stack
-            if(!cursorStack.isEmpty) {
-                if(slotStack.isEmpty || canStacksCombine(slotStack, cursorStack)) {
-                    val itemStackCopy = slotStack.copy()
-                    itemStackCopy.count = count
-                    slotStack = itemStackCopy
-                    cursorStack.decrement(count)
-                }
+            if(canStacksCombine(slotStack, cursorStack)) {
+                val itemStackLarge = if(cursorStack.count > slotStack.count) cursorStack else slotStack
+                val itemStackSmall = if(cursorStack.count < slotStack.count) cursorStack else slotStack
+
+                itemStackSmall.increment(itemStackLarge.split(itemStackLarge.count - itemStackSmall.count).count)
+            } else if(cursorStack.isEmpty || slotStack.isEmpty) {
+                var emptyItemStack = if(cursorStack.isEmpty) cursorStack else slotStack
+                val fullItemStack = if(!cursorStack.isEmpty) cursorStack else slotStack
+
+                emptyItemStack = fullItemStack.split(fullItemStack.count)
             } else {
-                val itemStackCopy = slotStack.copy()
-                itemStackCopy.count = count
-                cursorStack = itemStackCopy
-                playerEntity.inventory.cursorStack = cursorStack
-                slotStack.decrement(count)
+                playerInventory.cursorStack = slotStack
+                slot.stack = cursorStack
             }
         }
 
-        slot.markDirty()
-        return cursorStack
+        return ItemStack.EMPTY
     }
 
     private fun calculateScrolledRows() {

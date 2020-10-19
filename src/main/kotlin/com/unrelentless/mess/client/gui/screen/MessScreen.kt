@@ -27,9 +27,9 @@ class MessScreen(
         val TEXTURE_SLOT = Identifier(Mess.IDENTIFIER, "textures/gui/heart_blank.png")
         val TEXTURE_TABS = Identifier("textures/gui/container/creative_inventory/tabs.png")
 
-        val ROWS = 5
-        val COLUMNS = 9
-        val INV_SIZE = ROWS * COLUMNS
+        const val ROWS = 5
+        const val COLUMNS = 9
+        const val INV_SIZE = ROWS * COLUMNS
         override fun renderOnClient() {
             ScreenRegistry.register(MessScreenHandler.HANDLER_TYPE, ::MessScreen)
         }
@@ -69,12 +69,12 @@ class MessScreen(
     override fun drawBackground(matrices: MatrixStack, delta: Float, mouseX: Int, mouseY: Int) {
         RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f)
         client?.textureManager?.bindTexture(TEXTURE)
-        val i = (width - backgroundWidth) / 2
-        val j = (height - backgroundHeight) / 2
-        this.drawTexture(matrices, i, j, 0, 0, backgroundWidth, backgroundHeight)
+        val halfWidth = (width - backgroundWidth) / 2
+        val halfHeight = (height - backgroundHeight) / 2
 
+        drawTexture(matrices, halfWidth, halfHeight, 0, 0, backgroundWidth, backgroundHeight)
         drawSlots(matrices)
-        drawScrollbar(matrices, delta, mouseX, mouseY);
+        drawScrollbar(matrices)
     }
 
     override fun render(matrices: MatrixStack?, mouseX: Int, mouseY: Int, delta: Float) {
@@ -84,42 +84,40 @@ class MessScreen(
     }
 
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
-        if (button == 0) {
-            if (this.isClickInScrollbar(mouseX, mouseY)) {
-                scrolling = hasScrollbar()
-                return true
-            }
+        return if (button == 0 && isClickInScrollbar(mouseX, mouseY)) {
+            scrolling = hasScrollbar()
+
+            true
+        } else {
+            super.mouseClicked(mouseX, mouseY, button)
         }
-        return super.mouseClicked(mouseX, mouseY, button)
     }
 
     override fun mouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean {
-        if (button == 0) {
+        if (button == 0)
             scrolling = false
-        }
+
         return super.mouseReleased(mouseX, mouseY, button)
     }
 
     override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
         if (!this.hasScrollbar()) return false
-        if(this.handler.limbs == null) return false
 
-        val scrollRows = (this.handler.limbs.size + COLUMNS - 1) / COLUMNS - ROWS
+        val numberOfPositions = (this.handler.limbs.size + COLUMNS - 1) / COLUMNS - ROWS
 
-        scrollPosition = (scrollPosition - amount / scrollRows).toFloat()
-        scrollPosition = clamp(scrollPosition, 0.0f, 1.0f)
-
-        handler.scrollPosition = this.scrollPosition
+        scrollPosition = clamp((scrollPosition - amount / numberOfPositions).toFloat(), 0.0f, 1.0f)
+        handler.scrollPosition = scrollPosition
 
         return true
     }
 
     override fun mouseDragged(mouseX: Double, mouseY: Double, button: Int, deltaX: Double, deltaY: Double): Boolean {
         return if (scrolling) {
-            val i = y + 18
-            val j = i + 112
-            scrollPosition = (mouseY.toFloat() - i.toFloat() - 7.5f) / ((j - i).toFloat() - 42.0f)
-            scrollPosition = clamp(scrollPosition, 0.0f, 1.0f)
+            //Entering magic number land
+            val scrollbarStartY = y + 18
+            val scrollbarEndY = scrollbarStartY + 112
+            val absoluteScrollPosition = ((mouseY - scrollbarStartY - 7.5f) / ((scrollbarEndY - scrollbarStartY).toFloat() - 42.0f)).toFloat()
+            scrollPosition = clamp(absoluteScrollPosition, 0.0f, 1.0f)
             handler.scrollPosition = scrollPosition
 
             true
@@ -131,7 +129,7 @@ class MessScreen(
     private fun drawSlots(matrices: MatrixStack) {
         client?.textureManager?.bindTexture(TEXTURE_SLOT)
 
-        val totalItemsToShow = handler.limbsToDisplay?.size ?: 0
+        val totalItemsToShow = handler.limbsToDisplay.size
 
         val xPos = (width - backgroundWidth) / 2 + 8
         val yPos = (height - backgroundHeight) / 2 + 17
@@ -154,7 +152,7 @@ class MessScreen(
             }
         }
     }
-    private fun drawScrollbar(matrices: MatrixStack, delta: Float, mouseX: Int, mouseY: Int) {
+    private fun drawScrollbar(matrices: MatrixStack) {
         client?.textureManager?.bindTexture(TEXTURE_TABS)
         this.drawTexture(
                 matrices,
@@ -167,13 +165,12 @@ class MessScreen(
         )
     }
 
-    private fun hasScrollbar(): Boolean = handler.limbs?.size ?: 0 > INV_SIZE
+    private fun hasScrollbar(): Boolean = handler.limbs.size > INV_SIZE
     private fun isClickInScrollbar(mouseX: Double, mouseY: Double): Boolean {
         val k = x + 175
         val l = y + 18
         val m = k + 14
         val n = l + 112
-        val isInScrollbar = mouseX >= k.toDouble() && mouseY >= l.toDouble() && mouseX < m.toDouble() && mouseY < n.toDouble()
-        return isInScrollbar
+        return mouseX >= k.toDouble() && mouseY >= l.toDouble() && mouseX < m.toDouble() && mouseY < n.toDouble()
     }
 }

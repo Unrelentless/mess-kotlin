@@ -19,7 +19,7 @@ class LimbInventory(private val size: Int, private val owner: BlockEntity?): Sid
     override fun isEmpty(): Boolean = itemStack.isEmpty
     override fun getStack(slot: Int): ItemStack = itemStack
     override fun canPlayerUse(player: PlayerEntity?): Boolean = true
-    override fun canInsert(slot: Int, stack: ItemStack?, dir: Direction?): Boolean = true
+    override fun canInsert(slot: Int, stack: ItemStack?, dir: Direction?): Boolean = Block.getBlockFromItem(stack?.item) !is LimbBlock
     override fun canExtract(slot: Int, stack: ItemStack?, dir: Direction?): Boolean = true
     override fun getMaxCountPerStack(): Int = size * itemStack.item.maxCount
 
