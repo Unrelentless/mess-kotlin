@@ -37,7 +37,6 @@ class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, val limbs
         when(actionType) {
             SlotActionType.QUICK_MOVE -> return transferSlot(playerEntity, index)
             SlotActionType.PICKUP -> return pickup(index, mouseButton, playerEntity)
-            SlotActionType.PICKUP_ALL -> return pickupAll(index, mouseButton, playerEntity)
         }
 
         return super.onSlotClick(index, mouseButton, actionType, playerEntity)
