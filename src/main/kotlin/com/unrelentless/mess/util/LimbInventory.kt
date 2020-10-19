@@ -12,6 +12,7 @@ class LimbInventory(private val size: Int, private val owner: BlockEntity?): Sid
     private var itemStack: ItemStack = ItemStack.EMPTY
 
     fun getStack(): ItemStack = getStack(0)
+    fun withdrawStack(count: Int) = removeStack(0, count)
     override fun size(): Int = 1
     override fun isEmpty(): Boolean = itemStack.isEmpty
     override fun getStack(slot: Int): ItemStack = itemStack

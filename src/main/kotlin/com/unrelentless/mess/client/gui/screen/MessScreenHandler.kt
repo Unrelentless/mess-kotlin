@@ -50,17 +50,18 @@ class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, val limbs
         if(!slot.hasStack()) return ItemStack.EMPTY
 
         val slotStack = slot.stack
+        val maxMessInvSize = min(limbs.size, 9*5)
 
         // Slot clicked in MESS inventory
-        if(index < limbs.size) {
+        if(index < maxMessInvSize) {
             val count = min(slotStack.item.maxCount, slotStack.count)
 
-            if(!insertItem(ItemStack(slotStack.item, count), this.limbs.size, this.slots.size, true))
+            if(!insertItem(ItemStack(slotStack.item, count), maxMessInvSize, this.slots.size, true))
                 return ItemStack.EMPTY
 
             slotStack.decrement(count)
         } else {
-            val limbSlots = slots.filterIndexed{index, _ ->  index < this.limbs.size}
+            val limbSlots = slots.filterIndexed{index, _ ->  index < maxMessInvSize}
             val slotsWithItems = limbSlots.filter { ItemStack.areItemsEqual(slotStack, it.stack) }
             val iterator = slotsWithItems.iterator()
 
@@ -89,7 +90,7 @@ class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, val limbs
         val yOffsetPlayerInv = 121
         val yOffsetPlayerHotbar = 179
         val maxColumns = 9
-        val maxRows = 3
+        val maxRows = 5
         val rowTotal = min(1 + limbs.size / 9, maxRows)
 
         // MESS inv
@@ -120,17 +121,38 @@ class MessScreenHandler(syncId: Int, playerInventory: PlayerInventory, val limbs
     }
 
     private fun pickup(index: Int, mouseButton: Int, playerEntity: PlayerEntity): ItemStack {
+        if(limbs == null) return ItemStack.EMPTY
 
+        val slot = this.slots[index]
+        var slotStack = slot.stack
+        val count = min(slotStack.item.maxCount, slotStack.count)
+        var cursorStack = playerEntity.inventory.cursorStack
+        val maxMessInvSize = min(limbs.size, 9*5)
 
+        if(index < maxMessInvSize) {
+            // Deposit stack
+            if(!cursorStack.isEmpty) {
+                slotStack = ((slot.inventory) as LimbInventory).depositStack(cursorStack)
+            } else {
+                cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
+                playerEntity.inventory.cursorStack = cursorStack
+            }
+            // Slot in player inventory
+        } else {
+            // Deposit stack
+            if(!cursorStack.isEmpty) {
+                if(slotStack.isEmpty || canStacksCombine(slotStack, cursorStack)) {
+                    slotStack = ItemStack(cursorStack.item, slotStack.count + count)
+                    cursorStack.decrement(count)
+                }
+            } else {
+                cursorStack = ItemStack(slotStack.item, count)
+                playerEntity.inventory.cursorStack = cursorStack
+                slotStack.decrement(count)
+            }
+        }
 
-        return ItemStack.EMPTY
-
-    }
-
-    private fun pickupAll(index: Int, mouseButton: Int, playerEntity: PlayerEntity): ItemStack {
-
-
-
-        return ItemStack.EMPTY
+        slot.markDirty()
+        return cursorStack
     }
 }
