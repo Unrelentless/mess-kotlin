@@ -157,8 +157,8 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
 
     private fun pickup(index: Int, mouseButton: Int, playerEntity: PlayerEntity): ItemStack {
         if (index == -999) {
-            val stack = if(mouseButton == 0) playerInventory.cursorStack else playerInventory.cursorStack.split(1)
-            playerEntity.dropItem(stack, true)
+            val count = if(mouseButton == 0) playerInventory.cursorStack.count else 1
+            playerEntity.dropItem(playerInventory.cursorStack.split(count), true)
             return ItemStack.EMPTY
         }
 
@@ -173,7 +173,6 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
                 val count = min(slotStack.item.maxCount, slotStack.count)
                 playerEntity.inventory.cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
             }
-            return slotStack
         } else {
             return super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, playerEntity)
         }
