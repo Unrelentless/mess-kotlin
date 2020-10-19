@@ -44,7 +44,7 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
 
     init { createNewSlots() }
 
-    var scrolledRows = 0
+    private var scrolledRows = 0
     var scrollPosition = 0.0f
         set(newValue) {
             field = newValue
@@ -69,8 +69,7 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
             SlotActionType.QUICK_MOVE -> return transferSlot(playerEntity, index)
             SlotActionType.PICKUP -> return pickup(index, mouseButton, playerEntity)
             else -> super.onSlotClick(index, mouseButton, actionType, playerEntity)
-            // TODO: Implement custom pickupAll or quickCraft to prevent limbs being deposited. Test to see which.
-//            SlotActionType.PICKUP_ALL -> return pickupAll(index, mouseButton, playerEntity)
+            // TODO:  Implement custom quickcraft or figure out why its not working
 //            SlotActionType.QUICK_CRAFT -> return quickCraft(index, mouseButton, playerEntity)
         }
         return super.onSlotClick(index, mouseButton, actionType, playerEntity)
@@ -168,9 +167,10 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
 
         if(index < limbsToDisplay.size) {
             if(!cursorStack.isEmpty) {
-               ((slot.inventory) as LimbInventory).depositStack(cursorStack)
+                val count = if(mouseButton == 0) playerInventory.cursorStack.count else 1
+               ((slot.inventory) as LimbInventory).depositStack(cursorStack.split(count))
             } else {
-                val count = min(slotStack.item.maxCount, slotStack.count)
+                val count = min(slotStack.item.maxCount, slotStack.count) / (mouseButton + 1)
                 playerEntity.inventory.cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
             }
         } else {
