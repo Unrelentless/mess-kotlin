@@ -1,6 +1,8 @@
 package com.unrelentless.mess.util
 
+import com.unrelentless.mess.block.LimbBlock
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable
+import net.minecraft.block.Block
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.inventory.SidedInventory
@@ -56,6 +58,8 @@ class LimbInventory(private val size: Int, private val owner: BlockEntity?): Sid
     }
 
     fun depositStack(stack: ItemStack): ItemStack {
+        if(Block.getBlockFromItem(stack.item) is LimbBlock) return stack
+
         if(itemStack.isEmpty) {
             itemStack = stack.copy()
             stack.count = 0

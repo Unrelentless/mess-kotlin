@@ -44,7 +44,7 @@ class HeartBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     ): ScreenHandler? = MessScreenHandler(
             syncId,
             playerInventory,
-            limbs?.map(LimbBlockEntity::inventory)?.toTypedArray()
+            limbs?.map(LimbBlockEntity::inventory)?.toTypedArray() ?: emptyArray()
     )
 
     override fun getDisplayName(): Text = TranslatableText("container." + Mess.IDENTIFIER + ".mess")

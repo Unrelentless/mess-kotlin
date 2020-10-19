@@ -1,12 +1,17 @@
 package com.unrelentless.mess.client.gui.screen
 
 import com.unrelentless.mess.Mess
+import com.unrelentless.mess.block.LimbBlock
 import com.unrelentless.mess.util.LimbInventory
+import io.netty.buffer.Unpooled
+import net.fabricmc.fabric.api.network.ClientSidePacketRegistry
+import net.fabricmc.fabric.api.network.ServerSidePacketRegistry
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
+import net.minecraft.block.Block
 import net.minecraft.client.MinecraftClient
-import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
+import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.network.PacketByteBuf
 import net.minecraft.screen.ScreenHandler
@@ -17,11 +22,21 @@ import net.minecraft.util.Identifier
 import kotlin.math.min
 
 
-class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventory, val limbs: Array<LimbInventory>?) : ScreenHandler(HANDLER_TYPE, syncId) {
+class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventory, val limbs: Array<LimbInventory>) : ScreenHandler(HANDLER_TYPE, syncId) {
 
     companion object {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "mess_screen_handler")
         val HANDLER_TYPE: ScreenHandlerType<MessScreenHandler> = ScreenHandlerRegistry.registerExtended(IDENTIFIER, ::MessScreenHandler)
+        val C2S_IDENTIFIER = Identifier(Mess.IDENTIFIER, "sync_inv")
+
+        init {
+            ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
+                val scrollPosition = buffer.readFloat()
+                context.taskQueue.execute {
+                    (context.player.currentScreenHandler as? MessScreenHandler)?.scrollPosition = scrollPosition
+                }
+            }
+        }
     }
 
     constructor(syncId: Int, playerInventory: PlayerInventory, buf: PacketByteBuf): this(
@@ -30,22 +45,28 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
             buf.readIntArray().map { LimbInventory(it, null) }.toTypedArray()
     )
 
-    init {
-        createSlots()
-    }
+    init { createNewSlots() }
+
+    var scrolledRows = 0
+    var scrollPosition = 0.0f
+        set(newValue) {
+            field = newValue
+            sendNewPositionToServer()
+            calculateScrolledRows()
+            createNewSlots()
+        }
 
     val limbsToDisplay: Array<LimbInventory>?
-    get() {
-        val currentScreen = MinecraftClient.getInstance().currentScreen ?: return limbs
-        val scrolledRows = (currentScreen as MessScreen).scrolledRows
-        val limbs = limbs?.filterIndexed { index, _ ->
-            val min = scrolledRows * MessScreen.COLUMNS
-            val max = min(this.limbs.size,MessScreen.INV_SIZE + min)
+        get() {
+            val limbs = limbs.filterIndexed { index, _ ->
+                val min = scrolledRows * MessScreen.COLUMNS
+                val max = min(this.limbs.size, MessScreen.INV_SIZE + min)
 
-            (min until max).contains(index)
-        }?.toTypedArray()
-        return limbs
-    }
+                (min until max).contains(index)
+            }?.toTypedArray()
+
+            return limbs
+        }
 
     override fun canUse(player: PlayerEntity?): Boolean = true
     override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity): ItemStack {
@@ -96,11 +117,7 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
         return slotStack
     }
 
-    fun scrollItems() {
-        createSlots()
-    }
-
-    private fun createSlots() {
+    private fun createNewSlots() {
         slots.clear()
 
         val limbs = limbsToDisplay ?: emptyArray()
@@ -138,9 +155,12 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
         for(row in 0 until 9) {
             addSlot(Slot(playerInventory, row, xOffset + row * 18, yOffsetPlayerHotbar))
         }
+
+        slots.forEach(Slot::markDirty)
     }
 
     private fun pickup(index: Int, mouseButton: Int, playerEntity: PlayerEntity): ItemStack {
+        if(index == -1) return ItemStack.EMPTY
         val limbs = limbsToDisplay ?: return ItemStack.EMPTY
 
         val slot = this.slots[index]
@@ -151,7 +171,11 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
         if(index < limbs.size) {
             // Deposit stack
             if(!cursorStack.isEmpty) {
-                slotStack = ((slot.inventory) as LimbInventory).depositStack(cursorStack)
+                if(Block.getBlockFromItem(cursorStack.item) is LimbBlock) {
+                    return ItemStack.EMPTY
+                } else {
+                    slotStack = ((slot.inventory) as LimbInventory).depositStack(cursorStack)
+                }
             } else {
                 cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
                 playerEntity.inventory.cursorStack = cursorStack
@@ -177,5 +201,19 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
 
         slot.markDirty()
         return cursorStack
+    }
+
+    private fun calculateScrolledRows() {
+        val numberOfPositions = (this.limbs.size + 9 - 1) / 9 - 5
+        scrolledRows = (numberOfPositions * scrollPosition + 0.5).toInt()
+    }
+
+    private fun sendNewPositionToServer() {
+        if(playerInventory.player.world.isClient) {
+            val buffer = PacketByteBuf(Unpooled.buffer())
+            buffer.writeFloat(scrollPosition)
+
+            ClientSidePacketRegistry.INSTANCE.sendToServer(C2S_IDENTIFIER, buffer)
+        }
     }
 }

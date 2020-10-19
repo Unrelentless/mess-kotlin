@@ -12,7 +12,6 @@ import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.text.Text
 import net.minecraft.util.Identifier
-import net.minecraft.util.math.MathHelper
 import net.minecraft.util.math.MathHelper.clamp
 import java.lang.Integer.min
 
@@ -35,11 +34,11 @@ class MessScreen(
             ScreenRegistry.register(MessScreenHandler.HANDLER_TYPE, ::MessScreen)
         }
     }
-    var scrolledRows = 0
 
     private val slotSize = 18
     private val slotOriginX = 238
     private val slotOriginY = 0
+    private var scrolling = false
     private var scrollPosition = 0f
 
     init {
@@ -84,6 +83,22 @@ class MessScreen(
         drawMouseoverTooltip(matrices, mouseX, mouseY)
     }
 
+    override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        if (button == 0) {
+            if (this.isClickInScrollbar(mouseX, mouseY)) {
+                scrolling = hasScrollbar()
+                return true
+            }
+        }
+        return super.mouseClicked(mouseX, mouseY, button)
+    }
+
+    override fun mouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        if (button == 0) {
+            scrolling = false
+        }
+        return super.mouseReleased(mouseX, mouseY, button)
+    }
 
     override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
         if (!this.hasScrollbar()) return false
@@ -94,10 +109,23 @@ class MessScreen(
         scrollPosition = (scrollPosition - amount / scrollRows).toFloat()
         scrollPosition = clamp(scrollPosition, 0.0f, 1.0f)
 
-        scrolledRows = (scrollRows * scrollPosition + 0.5).toInt()
+        handler.scrollPosition = this.scrollPosition
 
-        handler.scrollItems()
         return true
+    }
+
+    override fun mouseDragged(mouseX: Double, mouseY: Double, button: Int, deltaX: Double, deltaY: Double): Boolean {
+        return if (scrolling) {
+            val i = y + 18
+            val j = i + 112
+            scrollPosition = (mouseY.toFloat() - i.toFloat() - 7.5f) / ((j - i).toFloat() - 42.0f)
+            scrollPosition = clamp(scrollPosition, 0.0f, 1.0f)
+            handler.scrollPosition = scrollPosition
+
+            true
+        } else {
+            super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)
+        }
     }
 
     private fun drawSlots(matrices: MatrixStack) {
@@ -131,12 +159,21 @@ class MessScreen(
         this.drawTexture(
                 matrices,
                 291,
-                36 + (73.toFloat() * scrollPosition).toInt(),
+                36 + (73 * scrollPosition).toInt(),
                 232 + if (hasScrollbar()) 0 else 12,
                 0,
                 12,
                 15
         )
     }
+
     private fun hasScrollbar(): Boolean = handler.limbs?.size ?: 0 > INV_SIZE
+    private fun isClickInScrollbar(mouseX: Double, mouseY: Double): Boolean {
+        val k = x + 175
+        val l = y + 18
+        val m = k + 14
+        val n = l + 112
+        val isInScrollbar = mouseX >= k.toDouble() && mouseY >= l.toDouble() && mouseX < m.toDouble() && mouseY < n.toDouble()
+        return isInScrollbar
+    }
 }
