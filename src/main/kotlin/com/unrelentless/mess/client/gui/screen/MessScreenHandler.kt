@@ -23,8 +23,8 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
 
     companion object {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "mess_screen_handler")
-        val HANDLER_TYPE: ScreenHandlerType<MessScreenHandler> = ScreenHandlerRegistry.registerExtended(IDENTIFIER, ::MessScreenHandler)
         val C2S_IDENTIFIER = Identifier(Mess.IDENTIFIER, "sync_inv")
+        val HANDLER_TYPE: ScreenHandlerType<MessScreenHandler> = ScreenHandlerRegistry.registerExtended(IDENTIFIER, ::MessScreenHandler)
 
         init {
             ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
@@ -44,10 +44,10 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
 
     init { createNewSlots() }
 
-    private var scrolledRows = 0
     var scrollPosition = 0.0f
         set(newValue) {
             field = newValue
+            //TODO: Only sync the scrolledrows without recreating the slots. Update index on server to reflect new rows.
             sendNewPositionToServer()
             calculateScrolledRows()
             createNewSlots()
@@ -59,6 +59,8 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
             val max = min(this.limbs.size, MessScreen.INV_SIZE + min)
             (min until max).contains(index)
         }.toTypedArray()
+
+    private var scrolledRows = 0
 
     override fun canUse(player: PlayerEntity?): Boolean = true
 
@@ -168,7 +170,7 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
         if(index < limbsToDisplay.size) {
             if(!cursorStack.isEmpty) {
                 val count = if(mouseButton == 0) playerInventory.cursorStack.count else 1
-               ((slot.inventory) as LimbInventory).depositStack(cursorStack.split(count))
+                ((slot.inventory) as LimbInventory).depositStack(cursorStack, count)
             } else {
                 val count = min(slotStack.item.maxCount, slotStack.count) / (mouseButton + 1)
                 playerEntity.inventory.cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)

@@ -24,5 +24,4 @@ class LowLimbBlockEntity: LimbBlockEntity(ENTITY_TYPE, 8) {
             BlockEntityRendererRegistry.INSTANCE.register(ENTITY_TYPE) { LimbEntityRenderer<LowLimbBlockEntity>(it) }
         }
     }
-
 }

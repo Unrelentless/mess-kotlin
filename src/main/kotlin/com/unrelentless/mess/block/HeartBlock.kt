@@ -59,8 +59,8 @@ class HeartBlock: BlockWithEntity(heartBlockSettings) {
         )
 
         // Recursion? - Why not!
-        for (i in posArray.indices) {
-            val nextPos = pos.add(posArray[i])
+        posArray.forEach {
+            val nextPos = pos.add(it)
             val nextBlock = world?.getBlockEntity(nextPos)
             if (nextBlock is LimbBlockEntity && !set.contains(nextBlock)) {
                 set.add(nextBlock)

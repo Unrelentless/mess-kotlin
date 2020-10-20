@@ -9,5 +9,5 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface MessMinecraftClientMixin {
 
     @Accessor("itemColors")
-    public ItemColors getItemColors();
+    ItemColors getItemColors();
 }

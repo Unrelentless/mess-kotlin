@@ -50,7 +50,7 @@ class LimbInventory(private val size: Int, private val owner: BlockEntity?): Sid
     }
 
     override fun markDirty() {
-        if(owner == null) return
+        if (owner == null) return
 
         owner.markDirty()
         require(owner is BlockEntityClientSerializable)
@@ -58,14 +58,16 @@ class LimbInventory(private val size: Int, private val owner: BlockEntity?): Sid
     }
 
     fun depositStack(stack: ItemStack): ItemStack {
-        if(Block.getBlockFromItem(stack.item) is LimbBlock) return stack
+        return depositStack(stack, stack.count)
+    }
 
-        if(itemStack.isEmpty) {
-            itemStack = stack.copy()
-            stack.count = 0
+    fun depositStack(stack: ItemStack, count: Int): ItemStack {
+        if (Block.getBlockFromItem(stack.item) is LimbBlock) return stack
+
+        if (itemStack.isEmpty) {
+            itemStack = stack.split(count)
         } else if (ItemStack.areItemsEqual(itemStack, stack)) {
-            val countToDeposit = min(stack.count, maxCountPerStack - itemStack.count)
-
+            val countToDeposit = min(count, maxCountPerStack - itemStack.count)
             itemStack.increment(countToDeposit)
             stack.decrement(countToDeposit)
         }

@@ -84,13 +84,11 @@ class MessScreen(
     }
 
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
-        return if (button == 0 && isClickInScrollbar(mouseX, mouseY)) {
-            scrolling = hasScrollbar()
+        if(button != 0 && !isClickInScrollbar(mouseX, mouseY))
+            return super.mouseClicked(mouseX, mouseY, button)
 
-            true
-        } else {
-            super.mouseClicked(mouseX, mouseY, button)
-        }
+        scrolling = hasScrollbar()
+        return true
     }
 
     override fun mouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean {
@@ -101,10 +99,10 @@ class MessScreen(
     }
 
     override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
-        if (!this.hasScrollbar()) return false
+        if (!this.hasScrollbar())
+            return false
 
         val numberOfPositions = (this.handler.limbs.size + COLUMNS - 1) / COLUMNS - ROWS
-
         scrollPosition = clamp((scrollPosition - amount / numberOfPositions).toFloat(), 0.0f, 1.0f)
         handler.scrollPosition = scrollPosition
 
@@ -112,29 +110,26 @@ class MessScreen(
     }
 
     override fun mouseDragged(mouseX: Double, mouseY: Double, button: Int, deltaX: Double, deltaY: Double): Boolean {
-        return if (scrolling) {
-            //Entering magic number land
-            val scrollbarStartY = y + 18
-            val scrollbarEndY = scrollbarStartY + 112
-            val absoluteScrollPosition = ((mouseY - scrollbarStartY - 7.5f) / ((scrollbarEndY - scrollbarStartY).toFloat() - 42.0f)).toFloat()
-            scrollPosition = clamp(absoluteScrollPosition, 0.0f, 1.0f)
-            handler.scrollPosition = scrollPosition
+        if(!scrolling) return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)
 
-            true
-        } else {
-            super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)
-        }
+        //Entering magic number land
+        val scrollbarStartY = y + 18
+        val scrollbarEndY = scrollbarStartY + 112
+        val absoluteScrollPosition = ((mouseY - scrollbarStartY - 7.5f) / ((scrollbarEndY - scrollbarStartY).toFloat() - 42.0f)).toFloat()
+        scrollPosition = clamp(absoluteScrollPosition, 0.0f, 1.0f)
+        handler.scrollPosition = scrollPosition
+
+        return true
     }
 
     private fun drawSlots(matrices: MatrixStack) {
         client?.textureManager?.bindTexture(TEXTURE_SLOT)
 
-        val totalItemsToShow = handler.limbsToDisplay.size
 
         val xPos = (width - backgroundWidth) / 2 + 8
         val yPos = (height - backgroundHeight) / 2 + 17
-
-        val rowTotal = min(1 + totalItemsToShow / 9, ROWS)
+        val totalItemsToShow = handler.limbsToDisplay.size
+        val rowTotal = min(1 + totalItemsToShow / COLUMNS, ROWS)
 
         for (row in 0 until rowTotal) {
             val columnMax = min(totalItemsToShow - COLUMNS * row, COLUMNS)
@@ -171,6 +166,9 @@ class MessScreen(
         val l = y + 18
         val m = k + 14
         val n = l + 112
-        return mouseX >= k.toDouble() && mouseY >= l.toDouble() && mouseX < m.toDouble() && mouseY < n.toDouble()
+        return mouseX >= k.toDouble()
+                && mouseY >= l.toDouble()
+                && mouseX < m.toDouble()
+                && mouseY < n.toDouble()
     }
 }
