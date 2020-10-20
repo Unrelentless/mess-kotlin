@@ -85,6 +85,8 @@ class MessScreen(
         searchBox.isVisible = true
         searchBox.setFocusUnlocked(false)
         searchBox.setSelected(true)
+
+        updateHandler()
     }
 
     override fun tick() {
@@ -142,7 +144,8 @@ class MessScreen(
 
         val numberOfPositions = (this.handler.limbs.size + COLUMNS - 1) / COLUMNS - ROWS
         scrollPosition = clamp((scrollPosition - amount / numberOfPositions).toFloat(), 0.0f, 1.0f)
-        handler.scrollPosition = scrollPosition
+
+        updateHandler()
 
         return true
     }
@@ -155,7 +158,8 @@ class MessScreen(
         val scrollbarEndY = scrollbarStartY + 112
         val absoluteScrollPosition = ((mouseY - scrollbarStartY - 7.5f) / ((scrollbarEndY - scrollbarStartY).toFloat() - 42.0f)).toFloat()
         scrollPosition = clamp(absoluteScrollPosition, 0.0f, 1.0f)
-        handler.scrollPosition = scrollPosition
+
+        updateHandler()
 
         return true
     }
@@ -163,8 +167,8 @@ class MessScreen(
     override fun charTyped(chr: Char, keyCode: Int): Boolean {
         if(ignoreTypedCharacter) return false
         if(!searchBox.charTyped(chr, keyCode)) return false
-        val string = searchBox.text
-        search()
+
+        updateHandler()
         return true
     }
 
@@ -183,18 +187,18 @@ class MessScreen(
             val string = searchBox.text
             if (searchBox.keyPressed(keyCode, scanCode, modifiers)) {
                 if (string != searchBox.text) {
-                    search()
+                    scrollPosition = 0.0f
+                    updateHandler()
                 }
                 true
             } else {
-                if (searchBox.isFocused && searchBox.isVisible && keyCode !== 256) true else super.keyPressed(keyCode, scanCode, modifiers)
+                if (searchBox.isFocused && searchBox.isVisible && keyCode != 256) true else super.keyPressed(keyCode, scanCode, modifiers)
             }
         }
     }
 
     private fun drawSlots(matrices: MatrixStack) {
         client?.textureManager?.bindTexture(TEXTURE_SLOT)
-
 
         val xPos = (width - backgroundWidth) / 2 + 8
         val yPos = (height - backgroundHeight) / 2 + 17
@@ -236,14 +240,14 @@ class MessScreen(
         val l = y + 18
         val m = k + 14
         val n = l + 112
+
         return mouseX >= k.toDouble()
                 && mouseY >= l.toDouble()
                 && mouseX < m.toDouble()
                 && mouseY < n.toDouble()
     }
 
-    private fun search() {
-        scrollPosition = 0.0f
-        handler.searchString = searchBox.text
+    private fun updateHandler() {
+        handler.updateInfo(searchBox.text, scrollPosition)
     }
 }

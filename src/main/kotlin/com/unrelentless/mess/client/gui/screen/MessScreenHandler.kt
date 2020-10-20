@@ -25,22 +25,17 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
 
     companion object {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "mess_screen_handler")
-        val C2S_POSITION_IDENTIFIER = Identifier(Mess.IDENTIFIER, "sync_position")
-        val C2S_SEARCH_IDENTIFIER = Identifier(Mess.IDENTIFIER, "sync_search")
+        val C2S_IDENTIFIER = Identifier(Mess.IDENTIFIER, "sync_server")
         val HANDLER_TYPE: ScreenHandlerType<MessScreenHandler> = ScreenHandlerRegistry.registerExtended(IDENTIFIER, ::MessScreenHandler)
 
         init {
-            ServerSidePacketRegistry.INSTANCE.register(C2S_POSITION_IDENTIFIER) { context, buffer ->
+            ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
                 val scrollPosition = buffer.readFloat()
-                context.taskQueue.execute {
-                    (context.player.currentScreenHandler as? MessScreenHandler)?.scrollPosition = scrollPosition
-                }
-            }
-
-            ServerSidePacketRegistry.INSTANCE.register(C2S_SEARCH_IDENTIFIER) { context, buffer ->
                 val searchString = buffer.readString()
                 context.taskQueue.execute {
-                    (context.player.currentScreenHandler as? MessScreenHandler)?.searchString = searchString
+                    (context.player.currentScreenHandler as? MessScreenHandler).let {
+                        it?.updateInfo(searchString, scrollPosition)
+                    }
                 }
             }
         }
@@ -51,22 +46,6 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
             playerInventory,
             buf.readIntArray().map { LimbInventory(it, null) }.toTypedArray()
     )
-
-    var scrollPosition = 0.0f
-        set(newValue) {
-            field = newValue
-            //TODO: Only sync the scrolledrows without recreating the slots. Update index on server to reflect new rows.
-            sendNewScrollPositionToServer()
-            createNewSlots()
-        }
-
-    var searchString = ""
-        set(newValue) {
-            field = newValue
-            scrollPosition = 0.0f
-            sendNewSearchStringToServer()
-            createNewSlots()
-        }
 
     val limbs: Array<LimbInventory>
         get() = allLimbs.filter { limb ->
@@ -84,11 +63,13 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
             (min until max).contains(index)
         }.toTypedArray()
 
-    private var scrolledRows = 0
-    get() {
-        val numberOfPositions = (this.limbs.size + MessScreen.COLUMNS - 1) / MessScreen.COLUMNS - MessScreen.ROWS
-        return (numberOfPositions * scrollPosition + 0.5).toInt()
-    }
+    private var scrollPosition = 0.0f
+    private var searchString = ""
+    private val scrolledRows: Int
+        get() {
+            val numberOfPositions = (this.limbs.size + MessScreen.COLUMNS - 1) / MessScreen.COLUMNS - MessScreen.ROWS
+            return (numberOfPositions * scrollPosition + 0.5).toInt()
+        }
 
     init { createNewSlots() }
 
@@ -144,6 +125,13 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
 
         slot.markDirty()
         return slotStack
+    }
+
+    fun updateInfo(searchString: String, scrollPosition: Float) {
+        this.searchString = searchString
+        this.scrollPosition = scrollPosition
+        createNewSlots()
+        syncToServer()
     }
 
     private fun createNewSlots() {
@@ -210,6 +198,7 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
                 val count = min(slotStack.item.maxCount, slotStack.count) / (mouseButton + 1)
                 playerEntity.inventory.cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
             }
+            createNewSlots()
         } else {
             return super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, playerEntity)
         }
@@ -217,21 +206,12 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
         return ItemStack.EMPTY
     }
 
-    private fun sendNewScrollPositionToServer() {
-        if(playerInventory.player.world.isClient) {
-            val buffer = PacketByteBuf(Unpooled.buffer())
-            buffer.writeFloat(scrollPosition)
+    private fun syncToServer() {
+        if(playerInventory.player.world.isClient) return
 
-            ClientSidePacketRegistry.INSTANCE.sendToServer(C2S_POSITION_IDENTIFIER, buffer)
-        }
-    }
-
-    private fun sendNewSearchStringToServer() {
-        if(playerInventory.player.world.isClient) {
-            val buffer = PacketByteBuf(Unpooled.buffer())
-            buffer.writeString(searchString)
-
-            ClientSidePacketRegistry.INSTANCE.sendToServer(C2S_SEARCH_IDENTIFIER, buffer)
-        }
+        val buffer = PacketByteBuf(Unpooled.buffer())
+        buffer.writeFloat(scrollPosition)
+        buffer.writeString(searchString)
+        ClientSidePacketRegistry.INSTANCE.sendToServer(C2S_IDENTIFIER, buffer)
     }
 }
