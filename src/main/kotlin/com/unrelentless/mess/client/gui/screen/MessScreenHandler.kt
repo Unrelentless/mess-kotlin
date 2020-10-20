@@ -25,15 +25,21 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
 
     companion object {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "mess_screen_handler")
-        val C2S_IDENTIFIER = Identifier(Mess.IDENTIFIER, "sync_position")
+        val C2S_POSITION_IDENTIFIER = Identifier(Mess.IDENTIFIER, "sync_position")
+        val C2S_SEARCH_IDENTIFIER = Identifier(Mess.IDENTIFIER, "sync_search")
         val HANDLER_TYPE: ScreenHandlerType<MessScreenHandler> = ScreenHandlerRegistry.registerExtended(IDENTIFIER, ::MessScreenHandler)
 
         init {
-            ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
+            ServerSidePacketRegistry.INSTANCE.register(C2S_POSITION_IDENTIFIER) { context, buffer ->
                 val scrollPosition = buffer.readFloat()
-                val searchString = buffer.readString()
                 context.taskQueue.execute {
                     (context.player.currentScreenHandler as? MessScreenHandler)?.scrollPosition = scrollPosition
+                }
+            }
+
+            ServerSidePacketRegistry.INSTANCE.register(C2S_SEARCH_IDENTIFIER) { context, buffer ->
+                val searchString = buffer.readString()
+                context.taskQueue.execute {
                     (context.player.currentScreenHandler as? MessScreenHandler)?.searchString = searchString
                 }
             }
@@ -50,14 +56,16 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
         set(newValue) {
             field = newValue
             //TODO: Only sync the scrolledrows without recreating the slots. Update index on server to reflect new rows.
-            sendNewInfoToServer()
+            sendNewScrollPositionToServer()
             createNewSlots()
         }
 
     var searchString = ""
         set(newValue) {
             field = newValue
-            sendNewInfoToServer()
+            scrollPosition = 0.0f
+            sendNewSearchStringToServer()
+            createNewSlots()
         }
 
     val limbs: Array<LimbInventory>
@@ -116,6 +124,7 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
                 return ItemStack.EMPTY
 
             slotStack.decrement(count)
+            createNewSlots()
         } else {
             val limbSlots = slots.filterIndexed{ filterIndex,_ ->  filterIndex < limbs.size}
             val slotsWithItems = limbSlots.filter { ItemStack.areItemsEqual(slotStack, it.stack) }
@@ -149,7 +158,11 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
         val yOffsetPlayerHotbar = 179
         val rowTotal = min(1 + limbs.size / MessScreen.COLUMNS, MessScreen.ROWS)
 
+        println("" + scrollPosition)
+        println("" + scrolledRows)
+        println("" + searchString)
         println("" + limbs.size)
+
         // MESS inv
         for (row in 0 until rowTotal) {
             val columnMax = min(limbs.size - MessScreen.COLUMNS * row, MessScreen.COLUMNS)
@@ -204,13 +217,21 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
         return ItemStack.EMPTY
     }
 
-    private fun sendNewInfoToServer() {
+    private fun sendNewScrollPositionToServer() {
         if(playerInventory.player.world.isClient) {
             val buffer = PacketByteBuf(Unpooled.buffer())
             buffer.writeFloat(scrollPosition)
+
+            ClientSidePacketRegistry.INSTANCE.sendToServer(C2S_POSITION_IDENTIFIER, buffer)
+        }
+    }
+
+    private fun sendNewSearchStringToServer() {
+        if(playerInventory.player.world.isClient) {
+            val buffer = PacketByteBuf(Unpooled.buffer())
             buffer.writeString(searchString)
 
-            ClientSidePacketRegistry.INSTANCE.sendToServer(C2S_IDENTIFIER, buffer)
+            ClientSidePacketRegistry.INSTANCE.sendToServer(C2S_SEARCH_IDENTIFIER, buffer)
         }
     }
 }

@@ -42,12 +42,7 @@ class MessScreen(
     private val slotOriginX = 238
     private val slotOriginY = 0
     private var scrolling = false
-
     private var scrollPosition = 0f
-    set(newValue) {
-        field = newValue
-        handler.scrollPosition = newValue
-    }
 
     private var ignoreTypedCharacter = false
     private val searchBox: TextFieldWidget by lazy {
@@ -127,7 +122,7 @@ class MessScreen(
     }
 
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
-        if(button != 0 && !isClickInScrollbar(mouseX, mouseY))
+        if(button != 0 || !isClickInScrollbar(mouseX, mouseY))
             return super.mouseClicked(mouseX, mouseY, button)
 
         scrolling = hasScrollbar()
@@ -147,6 +142,7 @@ class MessScreen(
 
         val numberOfPositions = (this.handler.limbs.size + COLUMNS - 1) / COLUMNS - ROWS
         scrollPosition = clamp((scrollPosition - amount / numberOfPositions).toFloat(), 0.0f, 1.0f)
+        handler.scrollPosition = scrollPosition
 
         return true
     }
@@ -159,6 +155,7 @@ class MessScreen(
         val scrollbarEndY = scrollbarStartY + 112
         val absoluteScrollPosition = ((mouseY - scrollbarStartY - 7.5f) / ((scrollbarEndY - scrollbarStartY).toFloat() - 42.0f)).toFloat()
         scrollPosition = clamp(absoluteScrollPosition, 0.0f, 1.0f)
+        handler.scrollPosition = scrollPosition
 
         return true
     }
