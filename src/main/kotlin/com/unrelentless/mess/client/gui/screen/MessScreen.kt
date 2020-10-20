@@ -8,9 +8,12 @@ import com.unrelentless.mess.util.Clientside
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gui.screen.ingame.HandledScreen
+import net.minecraft.client.gui.widget.TextFieldWidget
+import net.minecraft.client.util.InputUtil
 import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.text.Text
+import net.minecraft.text.TranslatableText
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.MathHelper.clamp
 import java.lang.Integer.min
@@ -22,7 +25,7 @@ class MessScreen(
         title: Text?
 ) : HandledScreen<MessScreenHandler>(handler, inventory, title) {
 
-    companion object: Clientside {
+    companion object : Clientside {
         val TEXTURE = Identifier(Mess.IDENTIFIER, "textures/gui/heart_blank.png")
         val TEXTURE_SLOT = Identifier(Mess.IDENTIFIER, "textures/gui/heart_blank.png")
         val TEXTURE_TABS = Identifier("textures/gui/container/creative_inventory/tabs.png")
@@ -39,7 +42,31 @@ class MessScreen(
     private val slotOriginX = 238
     private val slotOriginY = 0
     private var scrolling = false
+
     private var scrollPosition = 0f
+    set(newValue) {
+        field = newValue
+        handler.scrollPosition = newValue
+    }
+
+    private var ignoreTypedCharacter = false
+    private val searchBox: TextFieldWidget by lazy {
+        val textField = TextFieldWidget(
+                textRenderer,
+                x + 82,
+                y + 6,
+                80,
+                9,
+                TranslatableText("search." + Mess.IDENTIFIER + ".mess")
+        )
+
+        textField.setMaxLength(50)
+        textField.setHasBorder(false)
+        textField.isVisible = false
+        textField.setEditableColor(16777215)
+
+        textField
+    }
 
     init {
         this.backgroundHeight = 203
@@ -53,6 +80,21 @@ class MessScreen(
                 client.bakedModelManager,
                 (client as MessMinecraftClientMixin).itemColors
         )
+    }
+
+    override fun init() {
+        super.init()
+        client?.keyboard?.setRepeatEvents(true)
+        children.add(searchBox)
+
+        searchBox.isVisible = true
+        searchBox.setFocusUnlocked(false)
+        searchBox.setSelected(true)
+    }
+
+    override fun tick() {
+        super.tick()
+        searchBox.tick()
     }
 
     override fun drawForeground(matrices: MatrixStack?, mouseX: Int, mouseY: Int) {
@@ -75,6 +117,7 @@ class MessScreen(
         drawTexture(matrices, halfWidth, halfHeight, 0, 0, backgroundWidth, backgroundHeight)
         drawSlots(matrices)
         drawScrollbar(matrices)
+        searchBox.render(matrices, mouseX, mouseY, delta)
     }
 
     override fun render(matrices: MatrixStack?, mouseX: Int, mouseY: Int, delta: Float) {
@@ -104,7 +147,6 @@ class MessScreen(
 
         val numberOfPositions = (this.handler.limbs.size + COLUMNS - 1) / COLUMNS - ROWS
         scrollPosition = clamp((scrollPosition - amount / numberOfPositions).toFloat(), 0.0f, 1.0f)
-        handler.scrollPosition = scrollPosition
 
         return true
     }
@@ -117,9 +159,40 @@ class MessScreen(
         val scrollbarEndY = scrollbarStartY + 112
         val absoluteScrollPosition = ((mouseY - scrollbarStartY - 7.5f) / ((scrollbarEndY - scrollbarStartY).toFloat() - 42.0f)).toFloat()
         scrollPosition = clamp(absoluteScrollPosition, 0.0f, 1.0f)
-        handler.scrollPosition = scrollPosition
 
         return true
+    }
+
+    override fun charTyped(chr: Char, keyCode: Int): Boolean {
+        if(ignoreTypedCharacter) return false
+        if(!searchBox.charTyped(chr, keyCode)) return false
+        val string = searchBox.text
+        search()
+        return true
+    }
+
+    override fun keyReleased(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+        ignoreTypedCharacter = false
+        return super.keyReleased(keyCode, scanCode, modifiers)
+    }
+    override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+        ignoreTypedCharacter = false
+
+        val bl2 = InputUtil.fromKeyCode(keyCode, scanCode).method_30103().isPresent
+        return if (focusedSlot?.hasStack() == true && bl2 && handleHotbarKeyPressed(keyCode, scanCode)) {
+            ignoreTypedCharacter = true
+            true
+        } else {
+            val string = searchBox.text
+            if (searchBox.keyPressed(keyCode, scanCode, modifiers)) {
+                if (string != searchBox.text) {
+                    search()
+                }
+                true
+            } else {
+                if (searchBox.isFocused && searchBox.isVisible && keyCode !== 256) true else super.keyPressed(keyCode, scanCode, modifiers)
+            }
+        }
     }
 
     private fun drawSlots(matrices: MatrixStack) {
@@ -170,5 +243,10 @@ class MessScreen(
                 && mouseY >= l.toDouble()
                 && mouseX < m.toDouble()
                 && mouseY < n.toDouble()
+    }
+
+    private fun search() {
+        scrollPosition = 0.0f
+        handler.searchString = searchBox.text
     }
 }
