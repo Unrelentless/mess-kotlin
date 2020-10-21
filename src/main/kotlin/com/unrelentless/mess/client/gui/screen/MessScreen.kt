@@ -2,9 +2,13 @@ package com.unrelentless.mess.client.gui.screen
 
 import com.mojang.blaze3d.systems.RenderSystem
 import com.unrelentless.mess.Mess
+import com.unrelentless.mess.block.HighLimbBlock
+import com.unrelentless.mess.block.LowLimbBlock
+import com.unrelentless.mess.block.MidLimbBlock
 import com.unrelentless.mess.client.render.item.MessScreenItemRenderer
 import com.unrelentless.mess.mixin.MessMinecraftClientMixin
 import com.unrelentless.mess.util.Clientside
+import com.unrelentless.mess.util.Level
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gui.screen.ingame.HandledScreen
@@ -12,6 +16,7 @@ import net.minecraft.client.gui.widget.TextFieldWidget
 import net.minecraft.client.util.InputUtil
 import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.entity.player.PlayerInventory
+import net.minecraft.item.ItemStack
 import net.minecraft.text.Text
 import net.minecraft.text.TranslatableText
 import net.minecraft.util.Identifier
@@ -107,6 +112,7 @@ class MessScreen(
         drawTexture(matrices, halfWidth + 32, halfHeight, 0, 0, backgroundWidth, backgroundHeight)
         drawSlots(matrices)
         drawTabs(matrices)
+        drawTabIcons(matrices)
         drawScrollbar(matrices)
         searchBox?.render(matrices, mouseX, mouseY, delta)
     }
@@ -227,16 +233,34 @@ class MessScreen(
         for(slot in 0..2) {
             val yOrigin = if(slot == 0) 35 else 64
             val xPosActual = if(slot == 0) xPos else xPos + 3
+            val yPosActual = yPos + 18 + (slot * 29)
             this.drawTexture(
                     matrices,
                     xPosActual,
-                    yPos + 18 + (slot * 29),
+                    yPosActual,
                     0,
                     yOrigin,
                     32,
                     28
             )
         }
+    }
+    private fun drawTabIcons(matrices: MatrixStack) {
+        val xPos = (width - backgroundWidth) / 2
+        val yPos = (height - backgroundHeight) / 2
+
+        itemRenderer.zOffset = 100.0f
+
+        for(slot in 0..2) {
+            val yPosActual = yPos + 18 + (slot * 29)
+
+            RenderSystem.enableRescaleNormal()
+            val itemStack = ItemStack(MidLimbBlock.BLOCK.asItem(), 1)
+            itemRenderer.renderInGuiWithOverrides(itemStack, xPos+ 11, yPosActual + 6)
+            itemRenderer.renderGuiItemOverlay(textRenderer, itemStack, xPos + 11, yPosActual + 6)
+        }
+
+        itemRenderer.zOffset = 0.0f
     }
 
     private fun drawScrollbar(matrices: MatrixStack) {
