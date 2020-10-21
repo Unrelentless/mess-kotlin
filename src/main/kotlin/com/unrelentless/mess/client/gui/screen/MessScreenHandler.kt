@@ -104,23 +104,24 @@ class MessScreenHandler(
 
             slotStack.decrement(count)
         } else {
-            val limbSlots = slots.filterIndexed{ filterIndex,_ ->  filterIndex < limbs.size}
-            val slotsWithItems = limbSlots.filter { ItemStack.areItemsEqual(slotStack, it.stack) }
+//            val limbSlots = slots.filterIndexed{ filterIndex,_ ->  filterIndex < limbs.size}
+            val slotsWithItems = allLimbs.filter { canStacksCombine(slotStack, it.getStack()) }
             val iterator = slotsWithItems.iterator()
 
             // Fill in inventories that already have items
             while(iterator.hasNext() && !slotStack.isEmpty) {
-                (iterator.next().inventory as LimbInventory).depositStack(slotStack)
+                (iterator.next()).depositStack(slotStack)
             }
 
             // Fill empty slot with remainder
             if(!slotStack.isEmpty) {
-                val emptySlot = limbSlots.find { !it.hasStack() }
-                (emptySlot?.inventory as? LimbInventory)?.depositStack(slotStack)
+                val emptySlot = allLimbs.find { it.isEmpty }
+                emptySlot?.depositStack(slotStack)
             }
         }
 
         slot.markDirty()
+        updateInfo(this.searchString, this.scrollPosition)
         return slotStack
     }
 
@@ -147,6 +148,7 @@ class MessScreenHandler(
             return super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, playerEntity)
         }
 
+        updateInfo(this.searchString, this.scrollPosition)
         return ItemStack.EMPTY
     }
 

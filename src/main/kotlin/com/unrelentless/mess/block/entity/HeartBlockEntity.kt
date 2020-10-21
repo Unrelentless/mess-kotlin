@@ -3,6 +3,7 @@ package com.unrelentless.mess.block.entity
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.block.HeartBlock
 import com.unrelentless.mess.client.gui.screen.MessScreenHandler
+import com.unrelentless.mess.util.LimbInventory
 import com.unrelentless.mess.util.registerBlockEntity
 import com.unrelentless.mess.util.serializeInnerStackToTag
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory
@@ -41,7 +42,10 @@ class HeartBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     ): ScreenHandler? = MessScreenHandler(
             syncId,
             playerInventory,
-            limbs?.map(LimbBlockEntity::inventory)?.toTypedArray() ?: emptyArray()
+            limbs?.map(LimbBlockEntity::inventory)
+                    ?.sortedBy(LimbInventory::isEmpty)
+                    ?.toTypedArray()
+                    ?: emptyArray()
     )
 
     override fun getDisplayName(): Text = TranslatableText("container." + Mess.IDENTIFIER + ".mess")
@@ -50,7 +54,9 @@ class HeartBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
         val sizes = limbs?.map{it.size}?.toIntArray()
         val compoundTag = CompoundTag()
         val listTag = ListTag()
-        limbs?.map { it.inventory.getStack().serializeInnerStackToTag() }?.forEach{listTag.add(it)}
+        limbs?.sortedBy{it.inventory.isEmpty}
+                ?.map { it.inventory.getStack().serializeInnerStackToTag() }
+                ?.forEach{listTag.add(it)}
         compoundTag.put("items", listTag)
 
         packetByteBuf?.writeIntArray(sizes)
