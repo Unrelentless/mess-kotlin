@@ -104,9 +104,8 @@ class MessScreenHandler(
 
             slotStack.decrement(count)
         } else {
-//            val limbSlots = slots.filterIndexed{ filterIndex,_ ->  filterIndex < limbs.size}
-            val slotsWithItems = allLimbs.filter { canStacksCombine(slotStack, it.getStack()) }
-            val iterator = slotsWithItems.iterator()
+            val limbWithItems = allLimbs.filter { canStacksCombine(slotStack, it.getStack()) }
+            val iterator = limbWithItems.iterator()
 
             // Fill in inventories that already have items
             while(iterator.hasNext() && !slotStack.isEmpty) {
@@ -115,8 +114,8 @@ class MessScreenHandler(
 
             // Fill empty slot with remainder
             if(!slotStack.isEmpty) {
-                val emptySlot = allLimbs.find { it.isEmpty }
-                emptySlot?.depositStack(slotStack)
+                val emptyLimb = allLimbs.find { it.isEmpty }
+                emptyLimb?.depositStack(slotStack)
             }
         }
 
