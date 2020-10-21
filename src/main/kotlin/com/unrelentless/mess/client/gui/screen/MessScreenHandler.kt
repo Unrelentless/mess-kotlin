@@ -72,6 +72,7 @@ class MessScreenHandler(
 
     override fun canUse(player: PlayerEntity?): Boolean = true
     override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity): ItemStack {
+        if(!playerEntity.world.isClient) createNewSlots()
         if(index == -1) return ItemStack.EMPTY
 
         when(actionType) {
@@ -156,8 +157,11 @@ class MessScreenHandler(
         calculateScrolledRows()
         updateLimbs()
         updateLimbsToDisplay()
-        createNewSlots()
         syncToServer()
+
+        if(playerInventory.player.world.isClient) {
+            createNewSlots()
+        }
     }
 
     private fun calculateScrolledRows() {
