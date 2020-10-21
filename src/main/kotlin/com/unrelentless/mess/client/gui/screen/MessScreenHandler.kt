@@ -1,10 +1,10 @@
 package com.unrelentless.mess.client.gui.screen
 
 import com.unrelentless.mess.Mess
+import com.unrelentless.mess.util.Level
 import com.unrelentless.mess.util.LimbInventory
 import com.unrelentless.mess.util.LimbSlot
 import com.unrelentless.mess.util.deserializeInnerStack
-import com.unrelentless.mess.util.serializeInnerStackToTag
 import io.netty.buffer.Unpooled
 import net.fabricmc.fabric.api.network.ClientSidePacketRegistry
 import net.fabricmc.fabric.api.network.ServerSidePacketRegistry
@@ -12,7 +12,6 @@ import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
 import net.minecraft.client.item.TooltipContext
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
-import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.ListTag
@@ -41,8 +40,18 @@ class MessScreenHandler(
             ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
                 val scrollPosition = buffer.readFloat()
                 val searchString = buffer.readString()
+                val tabStatusArray = arrayOf(true, true, true)
+
+                for(x in 0..2) {
+                    tabStatusArray[x] = buffer.readBoolean()
+                }
+
                 context.taskQueue.execute {
                     (context.player.currentScreenHandler as? MessScreenHandler).let {
+                        it?.selectedTabs?.set(Level.LOW, tabStatusArray[0])
+                        it?.selectedTabs?.set(Level.MID, tabStatusArray[1])
+                        it?.selectedTabs?.set(Level.HIGH, tabStatusArray[2])
+
                         it?.updateInfo(searchString, scrollPosition)
                     }
                 }
@@ -57,10 +66,16 @@ class MessScreenHandler(
     ) {
         val tag = buf.readCompoundTag()
         val items: List<ItemStack> = (tag?.get("items") as ListTag).mapNotNull { (it as CompoundTag).deserializeInnerStack() }
-        allLimbs?.forEachIndexed {
+        allLimbs.forEachIndexed {
             index, limb -> limb.depositStack(items[index])
         }
     }
+
+    val selectedTabs: HashMap<Level, Boolean> = hashMapOf(
+            Pair(Level.LOW, true),
+            Pair(Level.MID, true),
+            Pair(Level.HIGH, true)
+    )
 
     private var scrollPosition = 0.0f
     private var searchString = ""
@@ -165,6 +180,11 @@ class MessScreenHandler(
         }
     }
 
+    fun toggleTab(selectedTabLevel: Level) {
+        this.selectedTabs[selectedTabLevel] = !this.selectedTabs[selectedTabLevel]!!
+    }
+
+
     private fun calculateScrolledRows() {
         val numberOfPositions = (this.limbs.size + MessScreen.COLUMNS - 1) / MessScreen.COLUMNS - MessScreen.ROWS
         scrolledRows = (numberOfPositions * scrollPosition + 0.5).toInt()
@@ -234,6 +254,11 @@ class MessScreenHandler(
         val buffer = PacketByteBuf(Unpooled.buffer())
         buffer.writeFloat(scrollPosition)
         buffer.writeString(searchString)
+
+        for(tab in selectedTabs) {
+            buffer.writeBoolean(tab.value)
+        }
+
         ClientSidePacketRegistry.INSTANCE.sendToServer(C2S_IDENTIFIER, buffer)
     }
 }

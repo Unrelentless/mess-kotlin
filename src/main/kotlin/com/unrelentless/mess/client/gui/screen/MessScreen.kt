@@ -2,8 +2,6 @@ package com.unrelentless.mess.client.gui.screen
 
 import com.mojang.blaze3d.systems.RenderSystem
 import com.unrelentless.mess.Mess
-import com.unrelentless.mess.block.HighLimbBlock
-import com.unrelentless.mess.block.LowLimbBlock
 import com.unrelentless.mess.block.MidLimbBlock
 import com.unrelentless.mess.client.render.item.MessScreenItemRenderer
 import com.unrelentless.mess.mixin.MessMinecraftClientMixin
@@ -106,10 +104,10 @@ class MessScreen(
     override fun drawBackground(matrices: MatrixStack, delta: Float, mouseX: Int, mouseY: Int) {
         RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f)
         client?.textureManager?.bindTexture(TEXTURE)
-        val halfWidth = (width - backgroundWidth) / 2
-        val halfHeight = (height - backgroundHeight) / 2
+        val originX = (width - backgroundWidth) / 2
+        val originY = (height - backgroundHeight) / 2
 
-        drawTexture(matrices, halfWidth + 32, halfHeight, 0, 0, backgroundWidth, backgroundHeight)
+        drawTexture(matrices, originX + 32, originY, 0, 0, backgroundWidth, backgroundHeight)
         drawSlots(matrices)
         drawTabs(matrices)
         drawTabIcons(matrices)
@@ -124,16 +122,23 @@ class MessScreen(
     }
 
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
-        if(button != 0 || !isClickInScrollbar(mouseX, mouseY))
-            return super.mouseClicked(mouseX, mouseY, button)
+        if(button != 0 || !isClickInScrollbar(mouseX, mouseY)) return super.mouseClicked(mouseX, mouseY, button)
+        if(isClickInTab(mouseX, mouseY) != null) return true
 
         scrolling = hasScrollbar()
         return true
     }
 
     override fun mouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean {
-        if (button == 0)
+        if (button == 0) {
             scrolling = false
+
+            val tabLevel = isClickInTab(mouseX, mouseY)
+            if(tabLevel != null) {
+                handler.toggleTab(tabLevel)
+                updateHandler()
+            }
+        }
 
         return super.mouseReleased(mouseX, mouseY, button)
     }
@@ -203,8 +208,8 @@ class MessScreen(
     private fun drawSlots(matrices: MatrixStack) {
         client?.textureManager?.bindTexture(TEXTURE_ETC)
 
-        val xPos = (width - backgroundWidth) / 2 + 8 + 32
-        val yPos = (height - backgroundHeight) / 2 + 17
+        val xPos = x + 8 + 32
+        val yPos = y + 17
         val totalItemsToShow = handler.limbsToDisplay.size
         val rowTotal = min(1 + totalItemsToShow / COLUMNS, ROWS)
 
@@ -227,13 +232,10 @@ class MessScreen(
     private fun drawTabs(matrices: MatrixStack) {
         client?.textureManager?.bindTexture(TEXTURE_ETC)
 
-        val xPos = (width - backgroundWidth) / 2
-        val yPos = (height - backgroundHeight) / 2
-
-        for(slot in 0..2) {
-            val yOrigin = if(slot == 0) 35 else 64
-            val xPosActual = if(slot == 0) xPos else xPos + 3
-            val yPosActual = yPos + 18 + (slot * 29)
+        for(tab in handler.selectedTabs) {
+            val yOrigin = if(!tab.value) 35 else 64
+            val xPosActual = if(!tab.value) x else x + 3
+            val yPosActual = y + 18 + (tab.key.displayIndex * 29)
             this.drawTexture(
                     matrices,
                     xPosActual,
@@ -246,18 +248,15 @@ class MessScreen(
         }
     }
     private fun drawTabIcons(matrices: MatrixStack) {
-        val xPos = (width - backgroundWidth) / 2
-        val yPos = (height - backgroundHeight) / 2
-
         itemRenderer.zOffset = 100.0f
 
-        for(slot in 0..2) {
-            val yPosActual = yPos + 18 + (slot * 29)
+        for(level in handler.selectedTabs.keys) {
+            val yPosActual = y + 18 + (level.displayIndex * 29)
 
             RenderSystem.enableRescaleNormal()
-            val itemStack = ItemStack(MidLimbBlock.BLOCK.asItem(), 1)
-            itemRenderer.renderInGuiWithOverrides(itemStack, xPos+ 11, yPosActual + 6)
-            itemRenderer.renderGuiItemOverlay(textRenderer, itemStack, xPos + 11, yPosActual + 6)
+            val itemStack = ItemStack(level.block, 1)
+            itemRenderer.renderInGuiWithOverrides(itemStack, x+ 11, yPosActual + 6)
+            itemRenderer.renderGuiItemOverlay(textRenderer, itemStack, x + 11, yPosActual + 6)
         }
 
         itemRenderer.zOffset = 0.0f
@@ -278,10 +277,25 @@ class MessScreen(
 
     private fun hasScrollbar(): Boolean = handler.limbs.size > INV_SIZE
     private fun isClickInScrollbar(mouseX: Double, mouseY: Double): Boolean {
-        val xRange = (x+204..x+216)
-        val yRange = (y+18..y+105)
+        val widthRange = (x+208..x+218)
+        val heightRange = (y+18..y+105)
 
-        return xRange.contains(mouseX.toInt()) && yRange.contains(mouseY.toInt())
+        return widthRange.contains(mouseX.toInt()) && heightRange.contains(mouseY.toInt())
+    }
+
+    private fun isClickInTab(mouseX: Double, mouseY: Double): Level? {
+        val widthRange = (x..x+32)
+
+        Level.values().forEach {
+            val yMin = (y + 18 + (it.displayIndex * 29))
+            val heightRange = (yMin..yMin+28)
+
+            if(widthRange.contains(mouseX.toInt()) && heightRange.contains(mouseY.toInt())) {
+                return it
+            }
+        }
+
+        return null
     }
 
     private fun updateHandler() {
@@ -289,3 +303,10 @@ class MessScreen(
         handler.updateInfo(searchBox.text, scrollPosition)
     }
 }
+
+private val Level.displayIndex: Int
+    get() = when(this) {
+        Level.LOW -> 0
+        Level.MID -> 1
+        Level.HIGH -> 2
+    }
