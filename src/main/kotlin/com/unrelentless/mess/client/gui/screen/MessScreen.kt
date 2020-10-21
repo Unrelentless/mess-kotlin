@@ -2,7 +2,6 @@ package com.unrelentless.mess.client.gui.screen
 
 import com.mojang.blaze3d.systems.RenderSystem
 import com.unrelentless.mess.Mess
-import com.unrelentless.mess.block.MidLimbBlock
 import com.unrelentless.mess.client.render.item.MessScreenItemRenderer
 import com.unrelentless.mess.mixin.MessMinecraftClientMixin
 import com.unrelentless.mess.util.Clientside
@@ -234,12 +233,12 @@ class MessScreen(
 
         for(tab in handler.selectedTabs) {
             val yOrigin = if(!tab.value) 35 else 64
-            val xPosActual = if(!tab.value) x else x + 3
-            val yPosActual = y + 18 + (tab.key.displayIndex * 29)
+            val xPos = if(!tab.value) x else x + 3
+            val yPos = y + 18 + (tab.key.displayIndex * 29)
             this.drawTexture(
                     matrices,
-                    xPosActual,
-                    yPosActual,
+                    xPos,
+                    yPos,
                     0,
                     yOrigin,
                     32,
@@ -251,12 +250,12 @@ class MessScreen(
         itemRenderer.zOffset = 100.0f
 
         for(level in handler.selectedTabs.keys) {
-            val yPosActual = y + 18 + (level.displayIndex * 29)
+            val yPos = y + 18 + (level.displayIndex * 29)
 
             RenderSystem.enableRescaleNormal()
             val itemStack = ItemStack(level.block, 1)
-            itemRenderer.renderInGuiWithOverrides(itemStack, x+ 11, yPosActual + 6)
-            itemRenderer.renderGuiItemOverlay(textRenderer, itemStack, x + 11, yPosActual + 6)
+            itemRenderer.renderInGuiWithOverrides(itemStack, x+ 11, yPos + 6)
+            itemRenderer.renderGuiItemOverlay(textRenderer, itemStack, x + 11, yPos + 6)
         }
 
         itemRenderer.zOffset = 0.0f
