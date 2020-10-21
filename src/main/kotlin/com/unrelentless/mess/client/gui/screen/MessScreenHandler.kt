@@ -3,6 +3,8 @@ package com.unrelentless.mess.client.gui.screen
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.util.LimbInventory
 import com.unrelentless.mess.util.LimbSlot
+import com.unrelentless.mess.util.deserializeInnerStack
+import com.unrelentless.mess.util.serializeInnerStackToTag
 import io.netty.buffer.Unpooled
 import net.fabricmc.fabric.api.network.ClientSidePacketRegistry
 import net.fabricmc.fabric.api.network.ServerSidePacketRegistry
@@ -10,7 +12,10 @@ import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
 import net.minecraft.client.item.TooltipContext
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
+import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.ListTag
 import net.minecraft.network.PacketByteBuf
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.ScreenHandlerType
@@ -21,7 +26,11 @@ import net.minecraft.util.Identifier
 import kotlin.math.min
 
 
-class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventory, private val allLimbs: Array<LimbInventory>) : ScreenHandler(HANDLER_TYPE, syncId) {
+class MessScreenHandler(
+        syncId: Int,
+        private val playerInventory: PlayerInventory,
+        private val allLimbs: Array<LimbInventory>
+) : ScreenHandler(HANDLER_TYPE, syncId) {
 
     companion object {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "mess_screen_handler")
@@ -45,33 +54,21 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
             syncId,
             playerInventory,
             buf.readIntArray().map { LimbInventory(it, null) }.toTypedArray()
-    )
-
-    val limbs: Array<LimbInventory>
-        get() = allLimbs.filter { limb ->
-            val toolTip = limb.getStack().getTooltip(null, TooltipContext.Default.NORMAL)
-                    .map { Formatting.strip(it.string)?.trim()?.toLowerCase() }
-                    .first { !it.isNullOrEmpty() }
-
-            toolTip?.contains(searchString) ?: false
-        }.toTypedArray()
-
-    val limbsToDisplay: Array<LimbInventory>
-        get() = limbs.filterIndexed { index, _ ->
-            val min = scrolledRows * MessScreen.COLUMNS
-            val max = min(limbs.size, MessScreen.INV_SIZE + min)
-            (min until max).contains(index)
-        }.toTypedArray()
+    ) {
+        val tag = buf.readCompoundTag()
+        val items: List<ItemStack> = (tag?.get("items") as ListTag).mapNotNull { (it as CompoundTag).deserializeInnerStack() }
+        allLimbs?.forEachIndexed {
+            index, limb -> limb.depositStack(items[index])
+        }
+    }
 
     private var scrollPosition = 0.0f
     private var searchString = ""
-    private val scrolledRows: Int
-        get() {
-            val numberOfPositions = (this.limbs.size + MessScreen.COLUMNS - 1) / MessScreen.COLUMNS - MessScreen.ROWS
-            return (numberOfPositions * scrollPosition + 0.5).toInt()
-        }
-
-    init { createNewSlots() }
+    private var scrolledRows: Int = 0
+    var limbs: Array<LimbInventory> = allLimbs
+        private set
+    var limbsToDisplay: Array<LimbInventory> = emptyArray()
+        private set
 
     override fun canUse(player: PlayerEntity?): Boolean = true
     override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity): ItemStack {
@@ -105,7 +102,6 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
                 return ItemStack.EMPTY
 
             slotStack.decrement(count)
-            createNewSlots()
         } else {
             val limbSlots = slots.filterIndexed{ filterIndex,_ ->  filterIndex < limbs.size}
             val slotsWithItems = limbSlots.filter { ItemStack.areItemsEqual(slotStack, it.stack) }
@@ -127,11 +123,64 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
         return slotStack
     }
 
+    private fun pickup(index: Int, mouseButton: Int, playerEntity: PlayerEntity): ItemStack {
+        if (index == -999) {
+            val count = if(mouseButton == 0) playerInventory.cursorStack.count else 1
+            playerEntity.dropItem(playerInventory.cursorStack.split(count), true)
+            return ItemStack.EMPTY
+        }
+
+        val slot = slots[index]
+        val slotStack = slot.stack
+        val cursorStack = playerEntity.inventory.cursorStack
+
+        if(index < limbsToDisplay.size) {
+            if(!cursorStack.isEmpty) {
+                val count = if(mouseButton == 0) playerInventory.cursorStack.count else 1
+                ((slot.inventory) as LimbInventory).depositStack(cursorStack, count)
+            } else {
+                val count = min(slotStack.item.maxCount, slotStack.count) / (mouseButton + 1)
+                playerEntity.inventory.cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
+            }
+        } else {
+            return super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, playerEntity)
+        }
+
+        return ItemStack.EMPTY
+    }
+
     fun updateInfo(searchString: String, scrollPosition: Float) {
         this.searchString = searchString
         this.scrollPosition = scrollPosition
+
+        calculateScrolledRows()
+        updateLimbs()
+        updateLimbsToDisplay()
         createNewSlots()
         syncToServer()
+    }
+
+    private fun calculateScrolledRows() {
+        val numberOfPositions = (this.limbs.size + MessScreen.COLUMNS - 1) / MessScreen.COLUMNS - MessScreen.ROWS
+        scrolledRows = (numberOfPositions * scrollPosition + 0.5).toInt()
+    }
+
+    private fun updateLimbs() {
+        limbs = allLimbs.filter { limb ->
+            val toolTip = limb.getStack().getTooltip(null, TooltipContext.Default.NORMAL)
+                    .map { Formatting.strip(it.string)?.trim()?.toLowerCase() }
+                    .first { !it.isNullOrEmpty() }
+
+            toolTip?.contains(searchString) ?: false
+        }.toTypedArray()
+    }
+
+    private fun updateLimbsToDisplay() {
+        limbsToDisplay =  limbs.filterIndexed { index, _ ->
+            val min = scrolledRows * MessScreen.COLUMNS
+            val max = min(limbs.size, MessScreen.INV_SIZE + min)
+            (min until max).contains(index)
+        }.toTypedArray()
     }
 
     private fun createNewSlots() {
@@ -145,11 +194,6 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
         val yOffsetPlayerInv = 121
         val yOffsetPlayerHotbar = 179
         val rowTotal = min(1 + limbs.size / MessScreen.COLUMNS, MessScreen.ROWS)
-
-        println("" + scrollPosition)
-        println("" + scrolledRows)
-        println("" + searchString)
-        println("" + limbs.size)
 
         // MESS inv
         for (row in 0 until rowTotal) {
@@ -179,35 +223,8 @@ class MessScreenHandler(syncId: Int, private val playerInventory: PlayerInventor
         }
     }
 
-    private fun pickup(index: Int, mouseButton: Int, playerEntity: PlayerEntity): ItemStack {
-        if (index == -999) {
-            val count = if(mouseButton == 0) playerInventory.cursorStack.count else 1
-            playerEntity.dropItem(playerInventory.cursorStack.split(count), true)
-            return ItemStack.EMPTY
-        }
-
-        val slot = this.slots[index]
-        val slotStack = slot.stack
-        val cursorStack = playerEntity.inventory.cursorStack
-
-        if(index < limbsToDisplay.size) {
-            if(!cursorStack.isEmpty) {
-                val count = if(mouseButton == 0) playerInventory.cursorStack.count else 1
-                ((slot.inventory) as LimbInventory).depositStack(cursorStack, count)
-            } else {
-                val count = min(slotStack.item.maxCount, slotStack.count) / (mouseButton + 1)
-                playerEntity.inventory.cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
-            }
-            createNewSlots()
-        } else {
-            return super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, playerEntity)
-        }
-
-        return ItemStack.EMPTY
-    }
-
     private fun syncToServer() {
-        if(playerInventory.player.world.isClient) return
+        if(!playerInventory.player.world.isClient) return
 
         val buffer = PacketByteBuf(Unpooled.buffer())
         buffer.writeFloat(scrollPosition)

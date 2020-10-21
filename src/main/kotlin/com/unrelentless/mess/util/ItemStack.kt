@@ -6,20 +6,20 @@ import net.minecraft.util.registry.Registry
 
 fun ItemStack.serializeInnerStackToTag(): CompoundTag {
     val mainTag = CompoundTag()
+    val itemStack = if(!this.isEmpty) this else ItemStack.EMPTY
 
-    if (!this.isEmpty) {
-        val compoundTag = CompoundTag()
-        val identifier = Registry.ITEM.getId(this.item)
+    val compoundTag = CompoundTag()
+    val identifier = Registry.ITEM.getId(itemStack.item)
 
-        compoundTag.putString("id", identifier.toString())
-        compoundTag.putInt("count", this.count)
+    compoundTag.putString("id", identifier.toString())
+    compoundTag.putInt("count", itemStack.count)
 
-        if (this.tag != null) {
-            compoundTag.put("tag", this.tag?.copy())
-        }
-
-        mainTag.put("item", compoundTag)
+    if (itemStack.tag != null) {
+        compoundTag.put("tag", itemStack.tag?.copy())
     }
+
+    mainTag.put("item", compoundTag)
+
 
     return mainTag
 }
