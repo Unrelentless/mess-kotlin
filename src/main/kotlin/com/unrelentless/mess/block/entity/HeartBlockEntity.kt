@@ -51,11 +51,11 @@ class HeartBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     override fun getDisplayName(): Text = TranslatableText("container." + Mess.IDENTIFIER + ".mess")
 
     override fun writeScreenOpeningData(serverPlayerEntity: ServerPlayerEntity?, packetByteBuf: PacketByteBuf?) {
-        val sizes = limbs?.sortedBy{it.inventory.isEmpty}?.map{it.level.size}?.toIntArray()
+        val sortedLimbs = limbs?.sortedBy{it.inventory.isEmpty}
+        val sizes = sortedLimbs?.map{it.level.size}?.toIntArray()
         val compoundTag = CompoundTag()
         val listTag = ListTag()
-        limbs?.sortedBy{it.inventory.isEmpty}
-                ?.map { it.inventory.getStack().serializeInnerStackToTag() }
+        sortedLimbs?.map { it.inventory.getStack().serializeInnerStackToTag() }
                 ?.forEach{listTag.add(it)}
         compoundTag.put("items", listTag)
 

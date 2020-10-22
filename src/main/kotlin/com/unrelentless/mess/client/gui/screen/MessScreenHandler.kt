@@ -140,6 +140,7 @@ class MessScreenHandler(
 
         slot.markDirty()
         updateInfo(this.searchString, this.scrollPosition)
+
         return slotStack
     }
 
@@ -195,7 +196,7 @@ class MessScreenHandler(
     }
 
     private fun updateTabbedLimbs() {
-        tabbedLimbs = allLimbs.filter {
+        tabbedLimbs = allLimbs.sortedBy(LimbInventory::isEmpty).filter {
             selectedTabs[it.level] === true
         }.toTypedArray()
     }
