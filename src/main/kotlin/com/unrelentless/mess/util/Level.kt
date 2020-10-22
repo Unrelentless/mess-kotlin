@@ -12,6 +12,13 @@ import net.minecraft.block.Block
 enum class Level {
     LOW, MID, HIGH;
 
+    val size: Int
+    get() = when(this) {
+        LOW -> 8
+        MID -> 64
+        HIGH -> 4096
+    }
+
     val blockEntity: LimbBlockEntity
     get() = when(this) {
             LOW -> LowLimbBlockEntity()

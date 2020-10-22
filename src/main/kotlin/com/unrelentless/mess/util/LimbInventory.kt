@@ -10,7 +10,7 @@ import net.minecraft.item.ItemStack
 import net.minecraft.util.math.Direction
 import kotlin.math.min
 
-class LimbInventory(private val size: Int, private val owner: BlockEntity?): SidedInventory {
+class LimbInventory(val level: Level, private val owner: BlockEntity?): SidedInventory {
     private var itemStack: ItemStack = ItemStack.EMPTY
 
     fun getStack(): ItemStack = getStack(0)
@@ -21,7 +21,7 @@ class LimbInventory(private val size: Int, private val owner: BlockEntity?): Sid
     override fun canPlayerUse(player: PlayerEntity?): Boolean = true
     override fun canInsert(slot: Int, stack: ItemStack?, dir: Direction?): Boolean = Block.getBlockFromItem(stack?.item) !is LimbBlock
     override fun canExtract(slot: Int, stack: ItemStack?, dir: Direction?): Boolean = true
-    override fun getMaxCountPerStack(): Int = size * itemStack.item.maxCount
+    override fun getMaxCountPerStack(): Int = level.size * itemStack.item.maxCount
 
     override fun clear() {
         itemStack = ItemStack.EMPTY

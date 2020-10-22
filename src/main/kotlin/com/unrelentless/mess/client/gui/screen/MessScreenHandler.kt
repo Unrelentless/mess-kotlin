@@ -40,18 +40,17 @@ class MessScreenHandler(
             ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
                 val scrollPosition = buffer.readFloat()
                 val searchString = buffer.readString()
-                val tabStatusArray = arrayOf(true, true, true)
+                val tabs = mutableMapOf<Level, Boolean>()
 
-                for(x in 0..2) {
-                    tabStatusArray[x] = buffer.readBoolean()
+                for(x in Level.values().indices) {
+                    tabs[buffer.readEnumConstant(Level::class.java)] = buffer.readBoolean()
                 }
 
                 context.taskQueue.execute {
                     (context.player.currentScreenHandler as? MessScreenHandler).let {
-                        it?.selectedTabs?.set(Level.LOW, tabStatusArray[0])
-                        it?.selectedTabs?.set(Level.MID, tabStatusArray[1])
-                        it?.selectedTabs?.set(Level.HIGH, tabStatusArray[2])
-
+                        for(tab in tabs) {
+                            it?.selectedTabs?.set(tab.key, tab.value)
+                        }
                         it?.updateInfo(searchString, scrollPosition)
                     }
                 }
@@ -62,7 +61,10 @@ class MessScreenHandler(
     constructor(syncId: Int, playerInventory: PlayerInventory, buf: PacketByteBuf): this(
             syncId,
             playerInventory,
-            buf.readIntArray().map { LimbInventory(it, null) }.toTypedArray()
+            buf.readIntArray().map { int ->
+                val level = Level.values().find { it.size == int }!!
+                LimbInventory(level, null)
+            }.toTypedArray()
     ) {
         val tag = buf.readCompoundTag()
         val items: List<ItemStack> = (tag?.get("items") as ListTag).mapNotNull { (it as CompoundTag).deserializeInnerStack() }
@@ -80,7 +82,9 @@ class MessScreenHandler(
     private var scrollPosition = 0.0f
     private var searchString = ""
     private var scrolledRows: Int = 0
-    var limbs: Array<LimbInventory> = allLimbs
+    private var tabbedLimbs: Array<LimbInventory> = emptyArray()
+
+    var limbs: Array<LimbInventory> = emptyArray()
         private set
     var limbsToDisplay: Array<LimbInventory> = emptyArray()
         private set
@@ -109,7 +113,7 @@ class MessScreenHandler(
         val slotStack = slot.stack
 
         // Slot clicked in MESS inventory
-        if(index < limbs.size) {
+        if(index < limbsToDisplay.size) {
             val count = min(slotStack.item.maxCount, slotStack.count)
             val itemStackCopy = slotStack.copy()
             itemStackCopy.count = count
@@ -119,7 +123,7 @@ class MessScreenHandler(
 
             slotStack.decrement(count)
         } else {
-            val limbWithItems = allLimbs.filter { canStacksCombine(slotStack, it.getStack()) }
+            val limbWithItems = tabbedLimbs.filter { canStacksCombine(slotStack, it.getStack()) }
             val iterator = limbWithItems.iterator()
 
             // Fill in inventories that already have items
@@ -129,7 +133,7 @@ class MessScreenHandler(
 
             // Fill empty slot with remainder
             if(!slotStack.isEmpty) {
-                val emptyLimb = allLimbs.find { it.isEmpty }
+                val emptyLimb = tabbedLimbs.find { it.isEmpty }
                 emptyLimb?.depositStack(slotStack)
             }
         }
@@ -171,6 +175,7 @@ class MessScreenHandler(
         this.scrollPosition = scrollPosition
 
         calculateScrolledRows()
+        updateTabbedLimbs()
         updateLimbs()
         updateLimbsToDisplay()
         syncToServer()
@@ -184,14 +189,19 @@ class MessScreenHandler(
         this.selectedTabs[selectedTabLevel] = !this.selectedTabs[selectedTabLevel]!!
     }
 
-
     private fun calculateScrolledRows() {
         val numberOfPositions = (this.limbs.size + MessScreen.COLUMNS - 1) / MessScreen.COLUMNS - MessScreen.ROWS
         scrolledRows = (numberOfPositions * scrollPosition + 0.5).toInt()
     }
 
+    private fun updateTabbedLimbs() {
+        tabbedLimbs = allLimbs.filter {
+            selectedTabs[it.level] === true
+        }.toTypedArray()
+    }
+
     private fun updateLimbs() {
-        limbs = allLimbs.filter { limb ->
+        limbs = tabbedLimbs.filter { limb ->
             val toolTip = limb.getStack().getTooltip(null, TooltipContext.Default.NORMAL)
                     .map { Formatting.strip(it.string)?.trim()?.toLowerCase() }
                     .first { !it.isNullOrEmpty() }
@@ -256,6 +266,7 @@ class MessScreenHandler(
         buffer.writeString(searchString)
 
         for(tab in selectedTabs) {
+            buffer.writeEnumConstant(tab.key)
             buffer.writeBoolean(tab.value)
         }
 
