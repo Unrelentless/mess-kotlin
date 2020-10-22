@@ -214,7 +214,7 @@ class MessScreenHandler(
         val limbs = limbsToDisplay
 
         // Magic numbers
-        val xOffset = 9 + 32
+        val xOffset = 9
         val yOffsetInv = 18
         val yOffsetPlayerInv = 121
         val yOffsetPlayerHotbar = 179

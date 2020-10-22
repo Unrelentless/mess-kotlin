@@ -46,9 +46,9 @@ class MessScreen(
 
     init {
         this.backgroundHeight = 203
-        this.backgroundWidth = 195 + 32
-        this.titleX = super.titleX + 32
-        this.playerInventoryTitleX = super.playerInventoryTitleX + 32
+        this.backgroundWidth = 195
+        this.titleX = super.titleX
+        this.playerInventoryTitleX = super.playerInventoryTitleX
     }
 
     override fun init(client: MinecraftClient, width: Int, height: Int) {
@@ -66,7 +66,7 @@ class MessScreen(
 
         searchBox = TextFieldWidget(
                 textRenderer,
-                this.x + 82 + 32,
+                this.x + 82,
                 this.y + 6,
                 80,
                 9,
@@ -106,7 +106,7 @@ class MessScreen(
         val originX = (width - backgroundWidth) / 2
         val originY = (height - backgroundHeight) / 2
 
-        drawTexture(matrices, originX + 32, originY, 0, 0, backgroundWidth, backgroundHeight)
+        drawTexture(matrices, originX, originY, 0, 0, backgroundWidth, backgroundHeight)
         drawSlots(matrices)
         drawTabs(matrices)
         drawTabIcons(matrices)
@@ -207,7 +207,7 @@ class MessScreen(
     private fun drawSlots(matrices: MatrixStack) {
         client?.textureManager?.bindTexture(TEXTURE_ETC)
 
-        val xPos = x + 8 + 32
+        val xPos = x + 8
         val yPos = y + 17
         val totalItemsToShow = handler.limbsToDisplay.size
         val rowTotal = min(1 + totalItemsToShow / COLUMNS, ROWS)
@@ -231,9 +231,11 @@ class MessScreen(
     private fun drawTabs(matrices: MatrixStack) {
         client?.textureManager?.bindTexture(TEXTURE_ETC)
 
+        val xPos = x + backgroundWidth
+
         for(tab in handler.selectedTabs) {
             val yOrigin = if(!tab.value) 35 else 64
-            val xPos = if(!tab.value) x else x + 3
+            val xPos = if(!tab.value) xPos else xPos - 3
             val yPos = y + 18 + (tab.key.displayIndex * 29)
             this.drawTexture(
                     matrices,
@@ -247,6 +249,8 @@ class MessScreen(
         }
     }
     private fun drawTabIcons(matrices: MatrixStack) {
+        val xPos = x + backgroundWidth
+
         itemRenderer.zOffset = 100.0f
 
         for(level in handler.selectedTabs.keys) {
@@ -254,18 +258,20 @@ class MessScreen(
 
             RenderSystem.enableRescaleNormal()
             val itemStack = ItemStack(level.block, 1)
-            itemRenderer.renderInGuiWithOverrides(itemStack, x+ 11, yPos + 6)
-            itemRenderer.renderGuiItemOverlay(textRenderer, itemStack, x + 11, yPos + 6)
+            itemRenderer.renderInGuiWithOverrides(itemStack, xPos + 4, yPos + 6)
+            itemRenderer.renderGuiItemOverlay(textRenderer, itemStack, xPos + 4, yPos + 6)
         }
 
         itemRenderer.zOffset = 0.0f
     }
 
     private fun drawScrollbar(matrices: MatrixStack) {
+        val xPos = x + backgroundWidth
+
         client?.textureManager?.bindTexture(TEXTURE_ETC)
         this.drawTexture(
                 matrices,
-                x + 207,
+                xPos - 20,
                 y + 18 + (73 * scrollPosition).toInt(),
                 if (hasScrollbar()) 0 else 12,
                 0,
@@ -276,14 +282,17 @@ class MessScreen(
 
     private fun hasScrollbar(): Boolean = handler.limbs.size > INV_SIZE
     private fun isClickInScrollbar(mouseX: Double, mouseY: Double): Boolean {
-        val widthRange = (x+208..x+218)
+        val xPos = x + backgroundWidth
+
+        val widthRange = (xPos-24..xPos-10)
         val heightRange = (y+18..y+105)
 
         return widthRange.contains(mouseX.toInt()) && heightRange.contains(mouseY.toInt())
     }
 
     private fun isClickInTab(mouseX: Double, mouseY: Double): Level? {
-        val widthRange = (x..x+32)
+        val xPos = x + backgroundWidth
+        val widthRange = (xPos..xPos+32)
 
         Level.values().forEach {
             val yMin = (y + 18 + (it.displayIndex * 29))
