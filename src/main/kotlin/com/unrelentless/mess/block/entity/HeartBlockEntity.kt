@@ -85,4 +85,24 @@ class HeartBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
         }
     }
 
+    override fun fromTag(state: BlockState?, tag: CompoundTag?) {
+        val tabTags = (tag?.get("tabs") as CompoundTag)
+
+        selectedTabs.forEach {
+            selectedTabs[it.key] = tabTags.getBoolean(it.key.name)
+        }
+
+        super.fromTag(state, tag)
+    }
+
+    override fun toTag(tag: CompoundTag?): CompoundTag {
+        val tabsTag = CompoundTag()
+
+        selectedTabs.forEach {
+            tabsTag.putBoolean(it.key.name, it.value)
+        }
+
+        tag?.put("tabs", tabsTag)
+        return super.toTag(tag)
+    }
 }
