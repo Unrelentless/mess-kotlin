@@ -25,3 +25,6 @@ fun <T : BlockEntity> registerBlockEntity(
     id: Identifier,
     blockEntityType: () -> BlockEntityType<T>
 ): BlockEntityType<T> = Registry.register(Registry.BLOCK_ENTITY_TYPE, id, blockEntityType())
+
+fun registerItem(item: Item, id: Identifier): Item =
+        Registry.register(Registry.ITEM, id, item)

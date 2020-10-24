@@ -1,7 +1,8 @@
 package com.unrelentless.mess.block
 
 import com.unrelentless.mess.Mess
-import com.unrelentless.mess.block.settings.highLimbBlockSettings
+import com.unrelentless.mess.settings.highLimbBlockSettings
+import com.unrelentless.mess.settings.messItemSettings
 import com.unrelentless.mess.util.Clientside
 import com.unrelentless.mess.util.Level
 import com.unrelentless.mess.util.registerBlock
@@ -17,7 +18,7 @@ class HighLimbBlock: LimbBlock(highLimbBlockSettings, Level.HIGH), Clientside {
     companion object {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "high_limb")
         val BLOCK = registerBlock(HighLimbBlock(), IDENTIFIER)
-        val BLOCK_ITEM = registerBlockItem(BLOCK, IDENTIFIER, Item.Settings().group(ItemGroup.MISC))
+        val BLOCK_ITEM = registerBlockItem(BLOCK, IDENTIFIER, messItemSettings)
     }
 
     override fun renderOnClient() {

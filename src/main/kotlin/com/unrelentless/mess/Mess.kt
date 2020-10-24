@@ -8,6 +8,7 @@ import com.unrelentless.mess.block.entity.HighLimbBlockEntity
 import com.unrelentless.mess.block.entity.LowLimbBlockEntity
 import com.unrelentless.mess.block.entity.MidLimbBlockEntity
 import com.unrelentless.mess.client.gui.screen.MessScreen
+import com.unrelentless.mess.item.PortableMessItem
 import com.unrelentless.mess.util.Clientside
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.api.EnvType
@@ -32,7 +33,8 @@ class Mess : ModInitializer, ClientModInitializer {
                 LowLimbBlock.BLOCK_ITEM,
                 MidLimbBlock.BLOCK_ITEM,
                 HighLimbBlock.BLOCK_ITEM,
-                HeartBlock.BLOCK_ITEM
+                HeartBlock.BLOCK_ITEM,
+                PortableMessItem.ITEM
         )
 
         val ENTITIES: List<Clientside> = listOf(

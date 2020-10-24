@@ -1,8 +1,12 @@
-    {
-        "block.mess.heart": "MESS Heart",
-        "block.mess.low_limb": "MESS Limb (Low)",
-        "block.mess.mid_limb": "MESS Limb (Mid)",
-        "block.mess.high_limb": "MESS Limb (High)",
-            "container.mess.mess": "MESS",
-            "search.mess.mess": "MESS Search"
-    }
+{
+  "block.mess.heart": "MESS Heart",
+  "block.mess.low_limb": "MESS Limb (Low)",
+  "block.mess.mid_limb": "MESS Limb (Mid)",
+  "block.mess.high_limb": "MESS Limb (High)",
+
+  "item.mess.portable_mess": "Portable MESS",
+
+  "container.mess.mess": "MESS",
+
+  "search.mess.mess": "MESS Search"
+}
