@@ -2,6 +2,7 @@ package com.unrelentless.mess.item
 
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.block.HeartBlock
+import com.unrelentless.mess.block.entity.HeartBlockEntity
 import com.unrelentless.mess.settings.messItemSettings
 import com.unrelentless.mess.util.registerItem
 import net.minecraft.client.item.TooltipContext
@@ -10,7 +11,6 @@ import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.item.ItemUsageContext
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.text.LiteralText
 import net.minecraft.text.Text
 import net.minecraft.util.ActionResult
 import net.minecraft.util.Hand
@@ -27,17 +27,20 @@ class PortableMessItem : Item(messItemSettings) {
     }
 
     override fun useOnBlock(context: ItemUsageContext): ActionResult {
-        context.player?.let {player ->
-            val blockPos = context.blockPos
-            if(player.isSneaking) {
-                val tag = CompoundTag()
-                tag.putInt("x", blockPos.x)
-                tag.putInt("y", blockPos.y)
-                tag.putInt("z", blockPos.z)
+        if(context.world.isClient) return super.useOnBlock(context)
 
-                player.mainHandStack.putSubTag("heart", tag)
-
-                return ActionResult.SUCCESS
+        (context.world.getBlockEntity(context.blockPos) as? HeartBlockEntity)?.let {heart ->
+            context.player?.let { player ->
+                if (player.isSneaking) {
+                    linkHeart(
+                            context.stack.getSubTag("heart") != null,
+                            context.world,
+                            heart,
+                            context.blockPos,
+                            player,
+                            context.stack
+                    )
+                }
             }
         }
 
@@ -61,9 +64,36 @@ class PortableMessItem : Item(messItemSettings) {
     override fun appendTooltip(stack: ItemStack, world: World?, tooltip: MutableList<Text>, context: TooltipContext) {
         super.appendTooltip(stack, world, tooltip, context)
         deserializeBlockPosFromStack(stack)?.let {
-            tooltip.add(LiteralText(it.toShortString() ?: "Not linked"))
+            tooltip.add(Text.of(it.toShortString() ?: "Not linked"))
         }
     }
+
+    private fun linkHeart(
+            linked: Boolean,
+            world: World,
+            heart: HeartBlockEntity,
+            blockPos: BlockPos,
+            playerEntity: PlayerEntity,
+            stack: ItemStack
+    ) {
+        if(linked) {
+            deserializeBlockPosFromStack(stack)?.let {
+                (world.getBlockEntity(blockPos) as? HeartBlockEntity)?.let { oldHeart ->
+                    stack.removeSubTag("heart")
+                    oldHeart.chunkLoad(false)
+                }
+            }
+        }
+
+        val tag = CompoundTag()
+        tag.putInt("x", blockPos.x)
+        tag.putInt("y", blockPos.y)
+        tag.putInt("z", blockPos.z)
+
+        playerEntity.mainHandStack.putSubTag("heart", tag)
+        heart.chunkLoad(true)
+    }
+
 
     private fun deserializeBlockPosFromStack(stack: ItemStack): BlockPos? {
         val heartTag = stack.getSubTag("heart") ?: return null

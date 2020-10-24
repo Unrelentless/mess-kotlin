@@ -3,11 +3,7 @@ package com.unrelentless.mess.block.entity
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.block.HeartBlock
 import com.unrelentless.mess.client.gui.screen.MessScreenHandler
-import com.unrelentless.mess.util.Level
-import com.unrelentless.mess.util.LimbInventory
-import com.unrelentless.mess.util.registerBlockEntity
-import com.unrelentless.mess.util.serializeInnerStackToTag
-import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable
+import com.unrelentless.mess.util.*
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory
 import net.minecraft.block.BlockState
 import net.minecraft.block.entity.BlockEntity
@@ -23,7 +19,6 @@ import net.minecraft.text.Text
 import net.minecraft.text.TranslatableText
 import net.minecraft.util.Identifier
 import java.util.function.Supplier
-import kotlin.random.Random
 
 
 class HeartBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
@@ -75,21 +70,11 @@ class HeartBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
         }
     }
 
-    fun setLimbs(limbs: Array<LimbBlockEntity>?) {
-        this.limbs = limbs
-    }
-
-    fun updateTabs(selectedTabs:  HashMap<Level, Boolean>) {
-        selectedTabs.forEach{
-            this.selectedTabs[it.key] = it.value
-        }
-    }
-
     override fun fromTag(state: BlockState?, tag: CompoundTag?) {
-        val tabTags = (tag?.get("tabs") as CompoundTag)
-
-        selectedTabs.forEach {
-            selectedTabs[it.key] = tabTags.getBoolean(it.key.name)
+        (tag?.get("tabs") as? CompoundTag)?.let { tag ->
+            selectedTabs.forEach {
+                selectedTabs[it.key] = tag.getBoolean(it.key.name)
+            }
         }
 
         super.fromTag(state, tag)
@@ -104,5 +89,20 @@ class HeartBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
 
         tag?.put("tabs", tabsTag)
         return super.toTag(tag)
+    }
+
+    fun setLimbs(limbs: Array<LimbBlockEntity>?) {
+        this.limbs = limbs
+    }
+
+    fun updateTabs(selectedTabs:  HashMap<Level, Boolean>) {
+        selectedTabs.forEach{
+            this.selectedTabs[it.key] = it.value
+        }
+    }
+
+    fun chunkLoad(chunkLoad: Boolean) {
+        this.setChunkLoaded(chunkLoad)
+        limbs?.forEach{it.setChunkLoaded(chunkLoad)}
     }
 }

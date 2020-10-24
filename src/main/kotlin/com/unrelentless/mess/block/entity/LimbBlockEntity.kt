@@ -1,9 +1,6 @@
 package com.unrelentless.mess.block.entity
 
-import com.unrelentless.mess.util.Level
-import com.unrelentless.mess.util.LimbInventory
-import com.unrelentless.mess.util.deserializeLimb
-import com.unrelentless.mess.util.serializeLimb
+import com.unrelentless.mess.util.*
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable
 import net.minecraft.block.BlockState
 import net.minecraft.block.InventoryProvider
@@ -14,8 +11,10 @@ import net.minecraft.nbt.CompoundTag
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.WorldAccess
 
-
-open class LimbBlockEntity(type: BlockEntityType<*>, val level: Level) : BlockEntity(type), BlockEntityClientSerializable, InventoryProvider {
+open class LimbBlockEntity(
+        type: BlockEntityType<*>,
+        val level: Level
+) : BlockEntity(type), BlockEntityClientSerializable, InventoryProvider {
 
     val inventory: LimbInventory by lazy { LimbInventory(level, this) }
 

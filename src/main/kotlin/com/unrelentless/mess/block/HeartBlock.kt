@@ -13,7 +13,6 @@ import net.minecraft.block.BlockState
 import net.minecraft.block.BlockWithEntity
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.nbt.CompoundTag
 import net.minecraft.util.ActionResult
 import net.minecraft.util.Hand
 import net.minecraft.util.Identifier
@@ -22,7 +21,6 @@ import net.minecraft.util.math.BlockPos
 import net.minecraft.world.BlockView
 import net.minecraft.world.World
 import java.util.*
-
 
 class HeartBlock: BlockWithEntity(heartBlockSettings) {
     companion object {
@@ -73,7 +71,7 @@ class HeartBlock: BlockWithEntity(heartBlockSettings) {
         if(world.isClient || (player.isSneaking && player.mainHandStack.item == PortableMessItem.ITEM))
             return ActionResult.SUCCESS
 
-        HeartBlock.openScreen(state, world, pos, player)
+        openScreen(state, world, pos, player)
         return ActionResult.SUCCESS
     }
 }
