@@ -13,6 +13,7 @@ import net.minecraft.block.entity.BlockEntity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.item.Item
 import net.minecraft.item.ItemGroup
+import net.minecraft.text.LiteralText
 import net.minecraft.util.ActionResult
 import net.minecraft.util.Hand
 import net.minecraft.util.Identifier
@@ -38,17 +39,18 @@ class HeartBlock: BlockWithEntity(heartBlockSettings) {
 
         state?.createScreenHandlerFactory(world, pos).let {
             val blockEntity = world.getBlockEntity(pos) as? HeartBlockEntity
-            blockEntity?.setLimbs(findLimbs(world, pos, null).toTypedArray())
+            blockEntity?.setLimbs(findLimbs(world, pos).toTypedArray())
             player.openHandledScreen(it)
         }
 
         return ActionResult.SUCCESS
     }
 
-
-    private fun findLimbs(world: World?, pos: BlockPos, oldSet: HashSet<LimbBlockEntity>?): HashSet<LimbBlockEntity> {
-        val set = oldSet ?: hashSetOf()
-
+    private fun findLimbs(
+            world: World?,
+            pos: BlockPos,
+            set: HashSet<LimbBlockEntity> = hashSetOf()
+    ): HashSet<LimbBlockEntity> {
         val posArray = arrayOf(
                 BlockPos(1, 0, 0),
                 BlockPos(0, 1, 0),

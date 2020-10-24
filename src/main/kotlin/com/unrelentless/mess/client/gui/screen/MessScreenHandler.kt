@@ -1,6 +1,7 @@
 package com.unrelentless.mess.client.gui.screen
 
 import com.unrelentless.mess.Mess
+import com.unrelentless.mess.block.entity.HeartBlockEntity
 import com.unrelentless.mess.util.Level
 import com.unrelentless.mess.util.LimbInventory
 import com.unrelentless.mess.util.LimbSlot
@@ -28,7 +29,8 @@ import kotlin.math.min
 class MessScreenHandler(
         syncId: Int,
         private val playerInventory: PlayerInventory,
-        private val allLimbs: Array<LimbInventory>
+        private val allLimbs: Array<LimbInventory>,
+        private val owner: HeartBlockEntity? = null
 ) : ScreenHandler(HANDLER_TYPE, syncId) {
 
     companion object {
@@ -40,11 +42,10 @@ class MessScreenHandler(
             ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
                 val scrollPosition = buffer.readFloat()
                 val searchString = buffer.readString()
-                val tabs = mutableMapOf<Level, Boolean>()
+                val tabs: Map<Level, Boolean> = Level.values().map {
+                    Pair(buffer.readEnumConstant(Level::class.java), buffer.readBoolean())
+                }.toMap()
 
-                for(x in Level.values().indices) {
-                    tabs[buffer.readEnumConstant(Level::class.java)] = buffer.readBoolean()
-                }
 
                 context.taskQueue.execute {
                     (context.player.currentScreenHandler as? MessScreenHandler).let {
@@ -52,6 +53,7 @@ class MessScreenHandler(
                             it?.selectedTabs?.set(tab.key, tab.value)
                         }
                         it?.updateInfo(searchString, scrollPosition)
+                        it?.owner?.updateTabs(it.selectedTabs)
                     }
                 }
             }
@@ -62,14 +64,21 @@ class MessScreenHandler(
             syncId,
             playerInventory,
             buf.readIntArray().map { int ->
-                val level = Level.values().find { it.size == int }!!
-                LimbInventory(level, null)
+                LimbInventory(Level.values().find { it.size == int }!!, null)
             }.toTypedArray()
     ) {
-        val tag = buf.readCompoundTag()
-        val items: List<ItemStack> = (tag?.get("items") as ListTag).mapNotNull { (it as CompoundTag).deserializeInnerStack() }
+        val items = (buf.readCompoundTag()?.get("items") as ListTag)
+                .mapNotNull { (it as CompoundTag).deserializeInnerStack() }
+        val tabs: Map<Level, Boolean> = Level.values().map {
+            Pair(buf.readEnumConstant(Level::class.java), buf.readBoolean())
+        }.toMap()
+
         allLimbs.forEachIndexed {
             index, limb -> limb.depositStack(items[index])
+        }
+
+        tabs.forEach {
+            selectedTabs[it.key] = it.value
         }
     }
 
@@ -197,7 +206,7 @@ class MessScreenHandler(
 
     private fun updateTabbedLimbs() {
         tabbedLimbs = allLimbs.sortedBy(LimbInventory::isEmpty).filter {
-            selectedTabs[it.level] === true
+            selectedTabs[it.level] == true
         }.toTypedArray()
     }
 
@@ -266,9 +275,9 @@ class MessScreenHandler(
         buffer.writeFloat(scrollPosition)
         buffer.writeString(searchString)
 
-        for(tab in selectedTabs) {
-            buffer.writeEnumConstant(tab.key)
-            buffer.writeBoolean(tab.value)
+        selectedTabs.forEach {
+            buffer.writeEnumConstant(it.key)
+            buffer.writeBoolean(it.value)
         }
 
         ClientSidePacketRegistry.INSTANCE.sendToServer(C2S_IDENTIFIER, buffer)

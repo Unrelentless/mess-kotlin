@@ -134,6 +134,7 @@ class MessScreen(
 
             val tabLevel = isClickInTab(mouseX, mouseY)
             if(tabLevel != null) {
+                scrollPosition = 0.0f
                 handler.toggleTab(tabLevel)
                 updateHandler()
             }
@@ -199,7 +200,10 @@ class MessScreen(
                 }
                 true
             } else {
-                if (searchBox.isFocused && searchBox.isVisible && keyCode != 256) true else super.keyPressed(keyCode, scanCode, modifiers)
+                if (searchBox.isFocused && searchBox.isVisible && keyCode != 256)
+                    true
+                else
+                    super.keyPressed(keyCode, scanCode, modifiers)
             }
         }
     }
