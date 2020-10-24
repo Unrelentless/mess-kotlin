@@ -14,8 +14,8 @@ enum class Level {
 
     val size: Int
     get() = when(this) {
-        LOW -> 8
-        MID -> 64
+        LOW -> 32
+        MID -> 128
         HIGH -> 4096
     }
 
