@@ -3,9 +3,9 @@ package com.unrelentless.mess.block
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.block.entity.HeartBlockEntity
 import com.unrelentless.mess.block.entity.LimbBlockEntity
-import com.unrelentless.mess.item.PortableMessItem
+import com.unrelentless.mess.item.EnderLinkItem
 import com.unrelentless.mess.settings.heartBlockSettings
-import com.unrelentless.mess.settings.messItemSettings
+import com.unrelentless.mess.settings.messBlockItemSettings
 import com.unrelentless.mess.util.registerBlock
 import com.unrelentless.mess.util.registerBlockItem
 import net.minecraft.block.BlockRenderType
@@ -26,7 +26,7 @@ class HeartBlock: BlockWithEntity(heartBlockSettings) {
     companion object {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "heart")
         val BLOCK = registerBlock(HeartBlock(), IDENTIFIER)
-        val BLOCK_ITEM = registerBlockItem(BLOCK, IDENTIFIER, messItemSettings)
+        val BLOCK_ITEM = registerBlockItem(BLOCK, IDENTIFIER, messBlockItemSettings)
 
         fun openScreen(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity) {
             state?.createScreenHandlerFactory(world, pos).let {
@@ -68,7 +68,7 @@ class HeartBlock: BlockWithEntity(heartBlockSettings) {
     override fun getRenderType(state: BlockState?): BlockRenderType = BlockRenderType.MODEL
 
     override fun onUse(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity, hand: Hand, hit: BlockHitResult): ActionResult {
-        if(world.isClient || (player.isSneaking && player.mainHandStack.item == PortableMessItem.ITEM))
+        if(world.isClient || (player.isSneaking && player.mainHandStack.item == EnderLinkItem.ITEM))
             return ActionResult.SUCCESS
 
         openScreen(state, world, pos, player)

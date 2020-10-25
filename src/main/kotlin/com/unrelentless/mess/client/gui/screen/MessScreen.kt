@@ -3,7 +3,7 @@ package com.unrelentless.mess.client.gui.screen
 import com.mojang.blaze3d.systems.RenderSystem
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.client.render.item.MessScreenItemRenderer
-import com.unrelentless.mess.mixin.MessMinecraftClientMixin
+import com.unrelentless.mess.mixin.MinecraftClientMixin
 import com.unrelentless.mess.util.Clientside
 import com.unrelentless.mess.util.Level
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry
@@ -56,7 +56,7 @@ class MessScreen(
         this.itemRenderer = MessScreenItemRenderer(
                 client.textureManager,
                 client.bakedModelManager,
-                (client as MessMinecraftClientMixin).itemColors
+                (client as MinecraftClientMixin).itemColors
         )
     }
 

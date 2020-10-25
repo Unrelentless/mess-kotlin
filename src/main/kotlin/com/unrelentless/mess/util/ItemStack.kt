@@ -2,6 +2,7 @@ package com.unrelentless.mess.util
 
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.CompoundTag
+import net.minecraft.util.math.BlockPos
 import net.minecraft.util.registry.Registry
 
 fun ItemStack.serializeInnerStackToTag(): CompoundTag {
@@ -22,4 +23,13 @@ fun ItemStack.serializeInnerStackToTag(): CompoundTag {
 
 
     return mainTag
+}
+
+fun ItemStack.deserializeBlockPos(): BlockPos? {
+    val heartTag = this.getSubTag("heart") ?: return null
+    return BlockPos(
+            heartTag.getInt("x"),
+            heartTag.getInt("y"),
+            heartTag.getInt("z")
+    )
 }

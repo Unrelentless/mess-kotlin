@@ -1,3 +1,6 @@
-    {
-        "parent": "mess:block/heart"
+{
+      "parent": "item/generated",
+      "textures": {
+        "layer0": "item/ender_eye"
+      }
     }
