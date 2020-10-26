@@ -9,4 +9,7 @@ public interface EyeOfEnderEntityAccessor {
 
     @Accessor("dropsItem")
     void setDropsItem(boolean dropsItem);
+
+    @Accessor("lifeSpan")
+    int getLifeSpan();
 }

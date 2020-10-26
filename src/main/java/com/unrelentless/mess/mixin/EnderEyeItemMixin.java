@@ -3,6 +3,7 @@ package com.unrelentless.mess.mixin;
 import com.unrelentless.mess.block.HeartBlock;
 import com.unrelentless.mess.block.entity.HeartBlockEntity;
 import com.unrelentless.mess.item.EnderLinkItem;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.EnderEyeItem;
@@ -31,11 +32,12 @@ public class EnderEyeItemMixin {
         World world = context.getWorld();
         ItemStack stack = context.getStack();
         BlockPos blockPos = context.getBlockPos();
-        BlockEntity blockEntity = world.getBlockEntity(blockPos);
+        BlockState blockState = world.getBlockState(blockPos);
 
-        if(world.isClient) cir.setReturnValue(cir.getReturnValue());
-        if(!(blockEntity instanceof HeartBlockEntity)) cir.setReturnValue(cir.getReturnValue());
-        if(!player.isSneaking()) cir.setReturnValue(cir.getReturnValue());
+        if(world.isClient || !(blockState.getBlock() instanceof HeartBlock) || !player.isSneaking()) {
+            cir.setReturnValue(cir.getReturnValue());
+            return;
+        }
 
         ItemStack linkedStack = new ItemStack(EnderLinkItem.Companion.getITEM(), stack.getCount());
         CompoundTag tag = new CompoundTag();
@@ -46,7 +48,7 @@ public class EnderEyeItemMixin {
         linkedStack.putSubTag("heart", tag);
         player.setStackInHand(context.getHand(), linkedStack);
 
-        ((HeartBlockEntity) blockEntity).chunkLoad(true);
+        ((HeartBlockEntity) world.getBlockEntity(blockPos)).chunkLoad(true);
         cir.setReturnValue(ActionResult.SUCCESS);
     }
 
