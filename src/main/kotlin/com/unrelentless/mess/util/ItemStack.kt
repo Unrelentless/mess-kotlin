@@ -25,7 +25,7 @@ fun ItemStack.serializeInnerStackToTag(): CompoundTag {
     return mainTag
 }
 
-fun ItemStack.deserializeBlockPos(): BlockPos? {
+fun ItemStack.deserializeHeartBlockPos(): BlockPos? {
     val heartTag = this.getSubTag("heart") ?: return null
     return BlockPos(
             heartTag.getInt("x"),

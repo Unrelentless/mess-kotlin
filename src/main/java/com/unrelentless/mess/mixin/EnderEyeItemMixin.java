@@ -31,7 +31,6 @@ public class EnderEyeItemMixin {
         World world = context.getWorld();
         ItemStack stack = context.getStack();
         BlockPos blockPos = context.getBlockPos();
-
         BlockEntity blockEntity = world.getBlockEntity(blockPos);
 
         if(world.isClient) cir.setReturnValue(cir.getReturnValue());
@@ -56,7 +55,8 @@ public class EnderEyeItemMixin {
         ItemStack itemStack = user.getStackInHand(hand);
         HitResult hitResult = ItemRaycastInvoker.invokeRaycast(world, user, RaycastContext.FluidHandling.NONE);
 
-        if (hitResult.getType() == HitResult.Type.BLOCK && world.getBlockState(((BlockHitResult)hitResult).getBlockPos()).isOf(HeartBlock.Companion.getBLOCK())) {
+        if (hitResult.getType() == HitResult.Type.BLOCK
+                && world.getBlockState(((BlockHitResult)hitResult).getBlockPos()).isOf(HeartBlock.Companion.getBLOCK())) {
             cir.setReturnValue(TypedActionResult.pass(itemStack));
         }
     }

@@ -5,8 +5,13 @@ import com.unrelentless.mess.client.gui.screen.MessScreen
 import com.unrelentless.mess.entity.EnderLinkEntity
 import com.unrelentless.mess.mixin.EyeOfEnderEntityAccessor
 import com.unrelentless.mess.settings.enderLinkItemSettings
-import com.unrelentless.mess.util.deserializeBlockPos
+import com.unrelentless.mess.util.deserializeHeartBlockPos
 import com.unrelentless.mess.util.registerItem
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
+import net.fabricmc.fabric.api.event.world.WorldTickCallback
 import net.minecraft.client.item.TooltipContext
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.item.Item
@@ -37,7 +42,7 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
 
     override fun appendTooltip(stack: ItemStack, world: World?, tooltip: MutableList<Text>, context: TooltipContext) {
         super.appendTooltip(stack, world, tooltip, context)
-        stack.deserializeBlockPos()?.let {
+        stack.deserializeHeartBlockPos()?.let {
             tooltip.add(Text.of(it.toShortString() ?: "Not linked"))
         }
     }
@@ -49,7 +54,7 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
         val itemStack = player.mainHandStack
 
         if(world.isClient) return TypedActionResult.consume(itemStack)
-        val blockPos = itemStack.deserializeBlockPos() ?: return TypedActionResult.fail(itemStack)
+        val blockPos = itemStack.deserializeHeartBlockPos() ?: return TypedActionResult.fail(itemStack)
 
         val enderLinkEntity = EnderLinkEntity(world, player.x, player.getBodyY(0.5), player.z) {
             MessScreen.openScreen(world, blockPos, player)

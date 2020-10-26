@@ -9,7 +9,6 @@ import com.unrelentless.mess.util.registerBlockEntity
 import net.fabricmc.fabric.api.client.rendereregistry.v1.BlockEntityRendererRegistry
 import net.minecraft.block.entity.BlockEntityType
 import net.minecraft.util.Identifier
-import java.util.function.Supplier
 
 class LowLimbBlockEntity: LimbBlockEntity(ENTITY_TYPE, Level.LOW) {
 
@@ -17,7 +16,7 @@ class LowLimbBlockEntity: LimbBlockEntity(ENTITY_TYPE, Level.LOW) {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "low_limb_entity")
         val ENTITY_TYPE = registerBlockEntity(IDENTIFIER) {
             BlockEntityType.Builder
-                    .create(Supplier { LowLimbBlockEntity() }, LowLimbBlock.BLOCK)
+                    .create({ LowLimbBlockEntity() }, LowLimbBlock.BLOCK)
                     .build(null)
         }
 

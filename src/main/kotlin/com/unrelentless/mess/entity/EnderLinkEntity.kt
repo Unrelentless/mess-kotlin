@@ -11,11 +11,11 @@ class EnderLinkEntity(world: World,
 ): EyeOfEnderEntity(world, x, y, z) {
 
     override fun remove() {
-        handler?.handle()
+        handler?.execute()
         super.remove()
     }
 
     fun interface OnDestroyHandler {
-        fun handle()
+        fun execute()
     }
 }
