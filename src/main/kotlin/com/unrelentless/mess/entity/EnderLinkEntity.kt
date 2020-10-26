@@ -7,9 +7,8 @@ class EnderLinkEntity(world: World,
                       x: Double,
                       y: Double,
                       z: Double,
+                      private val handler: OnDestroyHandler?
 ): EyeOfEnderEntity(world, x, y, z) {
-
-    var handler: OnDestroyHandler? = null
 
     override fun remove() {
         handler?.handle()

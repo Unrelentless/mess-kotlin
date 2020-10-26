@@ -11,7 +11,6 @@ import net.minecraft.client.item.TooltipContext
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
-import net.minecraft.server.world.ServerWorld
 import net.minecraft.sound.SoundCategory
 import net.minecraft.sound.SoundEvents
 import net.minecraft.text.Text
@@ -30,10 +29,11 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
 
     override fun hasGlint(stack: ItemStack?): Boolean = true
     override fun use(world: World, user: PlayerEntity, hand: Hand): TypedActionResult<ItemStack> {
-        if(world.isClient) return TypedActionResult.fail(user.getStackInHand(hand))
-        return openScreen(world, user)
+        return if(world.isClient)
+            TypedActionResult.fail(user.getStackInHand(hand))
+        else
+            openScreen(world, user)
     }
-
 
     override fun appendTooltip(stack: ItemStack, world: World?, tooltip: MutableList<Text>, context: TooltipContext) {
         super.appendTooltip(stack, world, tooltip, context)
@@ -51,13 +51,13 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
         if(world.isClient) return TypedActionResult.consume(itemStack)
         val blockPos = itemStack.deserializeBlockPos() ?: return TypedActionResult.fail(itemStack)
 
-        val enderLinkEntity = EnderLinkEntity(world, player.x, player.getBodyY(0.5), player.z)
+        val enderLinkEntity = EnderLinkEntity(world, player.x, player.getBodyY(0.5), player.z) {
+            MessScreen.openScreen(world, blockPos, player)
+        }
+
         enderLinkEntity.setItem(itemStack)
         enderLinkEntity.initTargetPos(blockPos)
         (enderLinkEntity as EyeOfEnderEntityAccessor).setDropsItem(false)
-        enderLinkEntity.handler = EnderLinkEntity.OnDestroyHandler {
-            MessScreen.openScreen(world, blockPos, player)
-        }
 
         world.spawnEntity(enderLinkEntity)
         world.playSound(
@@ -71,11 +71,9 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
                 0.4f / (RANDOM.nextFloat() * 0.4f + 0.8f)
         )
 
-        if (!player.abilities.creativeMode) {
-            itemStack.decrement(1)
-        }
-
+        if (!player.abilities.creativeMode) itemStack.decrement(1)
         player.swingHand(player.activeHand, true)
+
         return TypedActionResult.success(itemStack)
     }
 }
