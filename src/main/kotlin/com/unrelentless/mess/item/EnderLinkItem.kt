@@ -24,14 +24,14 @@ import net.minecraft.world.World
 class EnderLinkItem : Item(enderLinkItemSettings) {
 
     companion object {
-        val IDENTIFIER = Identifier(Mess.IDENTIFIER, "portable_mess")
+        val IDENTIFIER = Identifier(Mess.IDENTIFIER, "ender_link")
         val ITEM = registerItem(EnderLinkItem(), IDENTIFIER)
     }
 
     override fun hasGlint(stack: ItemStack?): Boolean = true
     override fun use(world: World, user: PlayerEntity, hand: Hand): TypedActionResult<ItemStack> {
         if(world.isClient) return TypedActionResult.fail(user.getStackInHand(hand))
-        return doTheThing(world, user)
+        return openScreen(world, user)
     }
 
 
@@ -42,42 +42,40 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
         }
     }
 
-    private fun doTheThing(
+    private fun openScreen(
             world: World,
             player: PlayerEntity
     ): TypedActionResult<ItemStack> {
         val itemStack = player.mainHandStack
+
+        if(world.isClient) return TypedActionResult.consume(itemStack)
         val blockPos = itemStack.deserializeBlockPos() ?: return TypedActionResult.fail(itemStack)
 
-        if (world is ServerWorld) {
-            val enderLinkEntity = EnderLinkEntity(world, player.x, player.getBodyY(0.5), player.z)
-            enderLinkEntity.setItem(itemStack)
-            enderLinkEntity.initTargetPos(blockPos)
-            (enderLinkEntity as EyeOfEnderEntityAccessor).setDropsItem(false)
-            enderLinkEntity.handler = EnderLinkEntity.OnDestroyHandler {
-                MessScreen.openScreen(world, blockPos, player)
-            }
-
-            world.spawnEntity(enderLinkEntity)
-            world.playSound(
-                    null,
-                    player.x,
-                    player.y,
-                    player.z,
-                    SoundEvents.ENTITY_ENDER_EYE_LAUNCH,
-                    SoundCategory.NEUTRAL,
-                    0.5f,
-                    0.4f / (RANDOM.nextFloat() * 0.4f + 0.8f)
-            )
-
-            if (!player.abilities.creativeMode) {
-                itemStack.decrement(1)
-            }
-
-            player.swingHand(player.activeHand, true)
-            return TypedActionResult.success(itemStack)
+        val enderLinkEntity = EnderLinkEntity(world, player.x, player.getBodyY(0.5), player.z)
+        enderLinkEntity.setItem(itemStack)
+        enderLinkEntity.initTargetPos(blockPos)
+        (enderLinkEntity as EyeOfEnderEntityAccessor).setDropsItem(false)
+        enderLinkEntity.handler = EnderLinkEntity.OnDestroyHandler {
+            MessScreen.openScreen(world, blockPos, player)
         }
 
-        return TypedActionResult.consume(itemStack)
+        world.spawnEntity(enderLinkEntity)
+        world.playSound(
+                null,
+                player.x,
+                player.y,
+                player.z,
+                SoundEvents.ENTITY_ENDER_EYE_LAUNCH,
+                SoundCategory.NEUTRAL,
+                0.5f,
+                0.4f / (RANDOM.nextFloat() * 0.4f + 0.8f)
+        )
+
+        if (!player.abilities.creativeMode) {
+            itemStack.decrement(1)
+        }
+
+        player.swingHand(player.activeHand, true)
+        return TypedActionResult.success(itemStack)
     }
 }
