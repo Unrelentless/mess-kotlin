@@ -3,6 +3,7 @@ package com.unrelentless.mess.block
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.block.entity.HeartBlockEntity
 import com.unrelentless.mess.block.entity.LimbBlockEntity
+import com.unrelentless.mess.client.gui.screen.MessScreen
 import com.unrelentless.mess.item.EnderLinkItem
 import com.unrelentless.mess.settings.heartBlockSettings
 import com.unrelentless.mess.settings.messBlockItemSettings
@@ -28,15 +29,7 @@ class HeartBlock: BlockWithEntity(heartBlockSettings) {
         val BLOCK = registerBlock(HeartBlock(), IDENTIFIER)
         val BLOCK_ITEM = registerBlockItem(BLOCK, IDENTIFIER, messBlockItemSettings)
 
-        fun openScreen(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity) {
-            state?.createScreenHandlerFactory(world, pos).let {
-                val blockEntity = world.getBlockEntity(pos) as? HeartBlockEntity
-                blockEntity?.setLimbs(findLimbs(world, pos).toTypedArray())
-                player.openHandledScreen(it)
-            }
-        }
-
-        private fun findLimbs(
+        fun findLimbs(
                 world: World?,
                 pos: BlockPos,
                 set: HashSet<LimbBlockEntity> = hashSetOf()
@@ -71,7 +64,7 @@ class HeartBlock: BlockWithEntity(heartBlockSettings) {
         if(world.isClient || (player.isSneaking && player.mainHandStack.item == EnderLinkItem.ITEM))
             return ActionResult.SUCCESS
 
-        openScreen(state, world, pos, player)
+        MessScreen.openScreen(world, pos, player)
         return ActionResult.SUCCESS
     }
 }

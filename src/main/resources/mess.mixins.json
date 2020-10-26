@@ -6,7 +6,7 @@
     "MinecraftClientMixin",
     "EnderEyeItemMixin",
     "ItemRaycastInvoker",
-    "EyeOfEnderEntityMixin"
+    "EyeOfEnderEntityAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

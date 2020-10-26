@@ -2,6 +2,8 @@ package com.unrelentless.mess.client.gui.screen
 
 import com.mojang.blaze3d.systems.RenderSystem
 import com.unrelentless.mess.Mess
+import com.unrelentless.mess.block.HeartBlock
+import com.unrelentless.mess.block.entity.HeartBlockEntity
 import com.unrelentless.mess.client.render.item.MessScreenItemRenderer
 import com.unrelentless.mess.mixin.MinecraftClientMixin
 import com.unrelentless.mess.util.Clientside
@@ -12,12 +14,15 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen
 import net.minecraft.client.gui.widget.TextFieldWidget
 import net.minecraft.client.util.InputUtil
 import net.minecraft.client.util.math.MatrixStack
+import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.text.Text
 import net.minecraft.text.TranslatableText
 import net.minecraft.util.Identifier
+import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.MathHelper.clamp
+import net.minecraft.world.World
 import java.lang.Integer.min
 
 
@@ -36,6 +41,13 @@ class MessScreen(
         const val INV_SIZE = ROWS * COLUMNS
         override fun renderOnClient() {
             ScreenRegistry.register(MessScreenHandler.HANDLER_TYPE, ::MessScreen)
+        }
+        fun openScreen(world: World, pos: BlockPos, player: PlayerEntity) {
+            HeartBlock.BLOCK.defaultState.createScreenHandlerFactory(world, pos).let {
+                val blockEntity = world.getBlockEntity(pos) as? HeartBlockEntity
+                blockEntity?.setLimbs(HeartBlock.findLimbs(world, pos).toTypedArray())
+                player.openHandledScreen(it)
+            }
         }
     }
 

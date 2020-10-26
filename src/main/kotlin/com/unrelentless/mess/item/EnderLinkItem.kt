@@ -1,13 +1,13 @@
 package com.unrelentless.mess.item
 
 import com.unrelentless.mess.Mess
-import com.unrelentless.mess.block.HeartBlock
-import com.unrelentless.mess.mixin.EyeOfEnderEntityMixin
+import com.unrelentless.mess.client.gui.screen.MessScreen
+import com.unrelentless.mess.entity.EnderLinkEntity
+import com.unrelentless.mess.mixin.EyeOfEnderEntityAccessor
 import com.unrelentless.mess.settings.enderLinkItemSettings
 import com.unrelentless.mess.util.deserializeBlockPos
 import com.unrelentless.mess.util.registerItem
 import net.minecraft.client.item.TooltipContext
-import net.minecraft.entity.EyeOfEnderEntity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
@@ -27,16 +27,11 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "portable_mess")
         val ITEM = registerItem(EnderLinkItem(), IDENTIFIER)
     }
+
     override fun hasGlint(stack: ItemStack?): Boolean = true
     override fun use(world: World, user: PlayerEntity, hand: Hand): TypedActionResult<ItemStack> {
         if(world.isClient) return TypedActionResult.fail(user.getStackInHand(hand))
-
-        return doTheThing(world, user, hand)
-        user.getStackInHand(hand).deserializeBlockPos()?.let { it ->
-            HeartBlock.openScreen(world.getBlockState(it), world, it, user)
-        }
-
-        return TypedActionResult.success(user.getStackInHand(hand))
+        return doTheThing(world, user)
     }
 
 
@@ -47,34 +42,40 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
         }
     }
 
-    private fun doTheThing(world: World, user: PlayerEntity, hand: Hand): TypedActionResult<ItemStack> {
-        val itemStack: ItemStack = user.getStackInHand(hand)
+    private fun doTheThing(
+            world: World,
+            player: PlayerEntity
+    ): TypedActionResult<ItemStack> {
+        val itemStack = player.mainHandStack
+        val blockPos = itemStack.deserializeBlockPos() ?: return TypedActionResult.fail(itemStack)
 
         if (world is ServerWorld) {
-            val blockPos = itemStack.deserializeBlockPos()
-            if (blockPos != null) {
-                val eyeOfEnderEntity = EyeOfEnderEntity(world, user.x, user.getBodyY(0.5), user.z)
-                eyeOfEnderEntity.setItem(itemStack)
-                eyeOfEnderEntity.initTargetPos(blockPos)
-                (eyeOfEnderEntity as EyeOfEnderEntityMixin).setDropsItem(false)
-
-                world.spawnEntity(eyeOfEnderEntity)
-                world.playSound(null,
-                        user.x,
-                        user.y,
-                        user.z,
-                        SoundEvents.ENTITY_ENDER_EYE_LAUNCH,
-                        SoundCategory.NEUTRAL,
-                        0.5f,
-                        0.4f / (RANDOM.nextFloat() * 0.4f + 0.8f))
-
-                if (!user.abilities.creativeMode) {
-                    itemStack.decrement(1)
-                }
-
-                user.swingHand(hand, true)
-                return TypedActionResult.success(itemStack)
+            val enderLinkEntity = EnderLinkEntity(world, player.x, player.getBodyY(0.5), player.z)
+            enderLinkEntity.setItem(itemStack)
+            enderLinkEntity.initTargetPos(blockPos)
+            (enderLinkEntity as EyeOfEnderEntityAccessor).setDropsItem(false)
+            enderLinkEntity.handler = EnderLinkEntity.OnDestroyHandler {
+                MessScreen.openScreen(world, blockPos, player)
             }
+
+            world.spawnEntity(enderLinkEntity)
+            world.playSound(
+                    null,
+                    player.x,
+                    player.y,
+                    player.z,
+                    SoundEvents.ENTITY_ENDER_EYE_LAUNCH,
+                    SoundCategory.NEUTRAL,
+                    0.5f,
+                    0.4f / (RANDOM.nextFloat() * 0.4f + 0.8f)
+            )
+
+            if (!player.abilities.creativeMode) {
+                itemStack.decrement(1)
+            }
+
+            player.swingHand(player.activeHand, true)
+            return TypedActionResult.success(itemStack)
         }
 
         return TypedActionResult.consume(itemStack)
