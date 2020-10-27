@@ -44,6 +44,7 @@ public class EnderEyeItemMixin {
             tag.putInt("x", blockPos.getX());
             tag.putInt("y", blockPos.getY());
             tag.putInt("z", blockPos.getZ());
+            tag.putString("world", world.getRegistryKey().getValue().getPath());
 
             linkedStack.putSubTag("brain", tag);
             player.setStackInHand(context.getHand(), linkedStack);

@@ -25,11 +25,12 @@ fun ItemStack.serializeInnerStackToTag(): CompoundTag {
     return mainTag
 }
 
-fun ItemStack.deserializeBrainBlockPos(): BlockPos? {
-    val heartTag = this.getSubTag("brain") ?: return null
-    return BlockPos(
-            heartTag.getInt("x"),
-            heartTag.getInt("y"),
-            heartTag.getInt("z")
+fun ItemStack.deserializeBrain(): Pair<BlockPos, String>? {
+    val brainTag = this.getSubTag("brain") ?: return null
+    return Pair(BlockPos(
+            brainTag.getInt("x"),
+            brainTag.getInt("y"),
+            brainTag.getInt("z")),
+            brainTag.getString("world")
     )
 }

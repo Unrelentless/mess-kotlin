@@ -6,22 +6,27 @@ import com.unrelentless.mess.client.gui.screen.MessScreen
 import com.unrelentless.mess.entity.EnderLinkEntity
 import com.unrelentless.mess.mixin.EyeOfEnderEntityAccessor
 import com.unrelentless.mess.settings.enderLinkItemSettings
-import com.unrelentless.mess.util.deserializeBrainBlockPos
+import com.unrelentless.mess.util.deserializeBrain
+import com.unrelentless.mess.util.fromString
 import com.unrelentless.mess.util.registerItem
 import net.minecraft.client.item.TooltipContext
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.item.Items
+import net.minecraft.server.world.ServerWorld
 import net.minecraft.sound.SoundCategory
 import net.minecraft.sound.SoundEvents
 import net.minecraft.text.Text
 import net.minecraft.text.TranslatableText
+import net.minecraft.util.Formatting
 import net.minecraft.util.Hand
 import net.minecraft.util.Identifier
 import net.minecraft.util.TypedActionResult
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.World
+import net.minecraft.world.dimension.DimensionType
+import java.util.*
 
 
 class EnderLinkItem : Item(enderLinkItemSettings) {
@@ -41,8 +46,9 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
 
     override fun appendTooltip(stack: ItemStack, world: World?, tooltip: MutableList<Text>, context: TooltipContext) {
         super.appendTooltip(stack, world, tooltip, context)
-        stack.deserializeBrainBlockPos()?.let {
-            tooltip.add(Text.of(it.toShortString() ?: "Not linked"))
+        stack.deserializeBrain()?.let {
+            tooltip.add(Text.of(it.second.capitalize(Locale.ROOT)).copy().formatted(Formatting.GOLD))
+            tooltip.add(Text.of(it.first.toShortString() ?: "Not linked"))
         }
     }
 
@@ -53,12 +59,14 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
         if(world.isClient) return TypedActionResult.consume(player.mainHandStack)
 
         val itemStack = player.mainHandStack
-        val blockPos = itemStack.deserializeBrainBlockPos() ?: return TypedActionResult.fail(itemStack)
+        val brain = itemStack.deserializeBrain() ?: return TypedActionResult.fail(itemStack)
 
-        spawnEnderEntity(world, player, itemStack, blockPos) {
-            if(world.getBlockEntity(blockPos) !is BrainBlockEntity) {
+        spawnEnderEntity(world, player, itemStack, brain.first) {
+            val brainWorld = (world as ServerWorld).fromString(brain.second)
+
+            if(brainWorld?.getBlockEntity(brain.first) !is BrainBlockEntity) {
                 player.inventory.main.forEachIndexed { index, itemStack ->
-                    if(itemStack.item == ITEM && itemStack.deserializeBrainBlockPos() == blockPos) {
+                    if(itemStack.item == ITEM && itemStack.deserializeBrain() == brain) {
                         player.inventory.main[index] = ItemStack(Items.ENDER_EYE, itemStack.count)
                         player.inventory.markDirty()
                     }
@@ -66,7 +74,7 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
 
                 player.sendMessage(TranslatableText("message." + Mess.IDENTIFIER + ".link_broken"), false)
             } else{
-                MessScreen.openScreen(world, blockPos, player)
+                MessScreen.openScreen(brainWorld, brain.first, player)
             }
         }
 
