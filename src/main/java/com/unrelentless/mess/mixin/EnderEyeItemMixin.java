@@ -34,22 +34,25 @@ public class EnderEyeItemMixin {
         BlockPos blockPos = context.getBlockPos();
         BlockState blockState = world.getBlockState(blockPos);
 
-        if(world.isClient || !(blockState.getBlock() instanceof HeartBlock) || !player.isSneaking()) {
+        if(!(blockState.getBlock() instanceof HeartBlock) || !player.isSneaking()) {
             cir.setReturnValue(cir.getReturnValue());
             return;
         }
 
-        ItemStack linkedStack = new ItemStack(EnderLinkItem.Companion.getITEM(), stack.getCount());
-        CompoundTag tag = new CompoundTag();
-        tag.putInt("x", blockPos.getX());
-        tag.putInt("y", blockPos.getY());
-        tag.putInt("z", blockPos.getZ());
+        if(!world.isClient) {
+            ItemStack linkedStack = new ItemStack(EnderLinkItem.Companion.getITEM(), stack.getCount());
+            CompoundTag tag = new CompoundTag();
+            tag.putInt("x", blockPos.getX());
+            tag.putInt("y", blockPos.getY());
+            tag.putInt("z", blockPos.getZ());
 
-        linkedStack.putSubTag("heart", tag);
-        player.setStackInHand(context.getHand(), linkedStack);
+            linkedStack.putSubTag("heart", tag);
+            player.setStackInHand(context.getHand(), linkedStack);
 
-        ((HeartBlockEntity) world.getBlockEntity(blockPos)).chunkLoad(true);
-        cir.setReturnValue(ActionResult.SUCCESS);
+            ((HeartBlockEntity) world.getBlockEntity(blockPos)).chunkLoad(true);
+        }
+
+        cir.setReturnValue(ActionResult.CONSUME);
     }
 
     @Inject(at = @At("HEAD"), method = "use(Lnet/minecraft/world/World;Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/util/Hand;)Lnet/minecraft/util/TypedActionResult;", cancellable = true)
