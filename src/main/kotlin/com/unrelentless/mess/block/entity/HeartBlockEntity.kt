@@ -73,24 +73,27 @@ class HeartBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     }
 
     override fun fromTag(state: BlockState?, compoundTag: CompoundTag?) {
+        super.fromTag(state, compoundTag)
+
         (compoundTag?.get("tabs") as? CompoundTag)?.let { tag ->
             selectedTabs.forEach {
                 selectedTabs[it.key] = tag.getBoolean(it.key.name)
             }
         }
-
-        super.fromTag(state, compoundTag)
     }
 
-    override fun toTag(tag: CompoundTag?): CompoundTag {
+    override fun toTag(tag: CompoundTag): CompoundTag {
+        super.toTag(tag)
+
         val tabsTag = CompoundTag()
 
         selectedTabs.forEach {
             tabsTag.putBoolean(it.key.name, it.value)
         }
 
-        tag?.put("tabs", tabsTag)
-        return super.toTag(tag)
+        tag.put("tabs", tabsTag)
+
+        return tag
     }
 
     fun setLimbs(limbs: Array<LimbBlockEntity>?) {
@@ -101,6 +104,7 @@ class HeartBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
         selectedTabs.forEach{
             this.selectedTabs[it.key] = it.value
         }
+        markDirty()
     }
 
     fun chunkLoad(chunkLoad: Boolean) {
