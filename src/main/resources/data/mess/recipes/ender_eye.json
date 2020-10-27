@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mess:ender_link"
+    }
+  ],
+  "result": {
+    "item": "minecraft:ender_eye",
+    "count": 1
+  }
+}
