@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:smithing",
+  "base": {
+    "item": "mess:low_limb"
+  },
+  "addition":{
+    "item": "minecraft:diamond_block"
+  },
+  "result": {
+    "item": "mess:mid_limb"
+  }
+}
+

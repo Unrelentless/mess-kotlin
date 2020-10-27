@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:smithing",
+  "base": {
+    "item": "mess:mid_limb"
+  },
+  "addition":{
+    "item": "minecraft:netherite_block"
+  },
+  "result": {
+    "item": "mess:high_limb"
+  }
+}
+
