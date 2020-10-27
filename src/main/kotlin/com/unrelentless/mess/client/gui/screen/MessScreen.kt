@@ -2,8 +2,8 @@ package com.unrelentless.mess.client.gui.screen
 
 import com.mojang.blaze3d.systems.RenderSystem
 import com.unrelentless.mess.Mess
-import com.unrelentless.mess.block.HeartBlock
-import com.unrelentless.mess.block.entity.HeartBlockEntity
+import com.unrelentless.mess.block.BrainBlock
+import com.unrelentless.mess.block.entity.BrainBlockEntity
 import com.unrelentless.mess.client.render.item.MessScreenItemRenderer
 import com.unrelentless.mess.mixin.MinecraftClientMixin
 import com.unrelentless.mess.util.Clientside
@@ -33,8 +33,8 @@ class MessScreen(
 ) : HandledScreen<MessScreenHandler>(handler, inventory, title) {
 
     companion object : Clientside {
-        val TEXTURE = Identifier(Mess.IDENTIFIER, "textures/gui/heart_blank.png")
-        val TEXTURE_ETC = Identifier(Mess.IDENTIFIER, "textures/gui/heart_etc.png")
+        val TEXTURE = Identifier(Mess.IDENTIFIER, "textures/gui/brain_blank.png")
+        val TEXTURE_ETC = Identifier(Mess.IDENTIFIER, "textures/gui/brain_etc.png")
 
         const val ROWS = 5
         const val COLUMNS = 9
@@ -43,9 +43,9 @@ class MessScreen(
             ScreenRegistry.register(MessScreenHandler.HANDLER_TYPE, ::MessScreen)
         }
         fun openScreen(world: World, pos: BlockPos, player: PlayerEntity) {
-            HeartBlock.BLOCK.defaultState.createScreenHandlerFactory(world, pos).let {
-                val blockEntity = world.getBlockEntity(pos) as? HeartBlockEntity
-                blockEntity?.setLimbs(HeartBlock.findLimbs(world, pos).toTypedArray())
+            BrainBlock.BLOCK.defaultState.createScreenHandlerFactory(world, pos).let {
+                val blockEntity = world.getBlockEntity(pos) as? BrainBlockEntity
+                blockEntity?.setLimbs(BrainBlock.findLimbs(world, pos).toTypedArray())
                 player.openHandledScreen(it)
             }
         }

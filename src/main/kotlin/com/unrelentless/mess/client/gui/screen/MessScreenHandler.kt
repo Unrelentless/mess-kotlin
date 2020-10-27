@@ -1,7 +1,7 @@
 package com.unrelentless.mess.client.gui.screen
 
 import com.unrelentless.mess.Mess
-import com.unrelentless.mess.block.entity.HeartBlockEntity
+import com.unrelentless.mess.block.entity.BrainBlockEntity
 import com.unrelentless.mess.util.Level
 import com.unrelentless.mess.util.LimbInventory
 import com.unrelentless.mess.util.LimbSlot
@@ -30,7 +30,7 @@ class MessScreenHandler(
         syncId: Int,
         private val playerInventory: PlayerInventory,
         private val allLimbs: Array<LimbInventory>,
-        private val owner: HeartBlockEntity? = null
+        private val owner: BrainBlockEntity? = null
 ) : ScreenHandler(HANDLER_TYPE, syncId) {
 
     companion object {

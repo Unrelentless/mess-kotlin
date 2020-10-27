@@ -18,7 +18,7 @@ val highLimbBlockSettings: FabricBlockSettings =
                 .of(Material.METAL)
                 .strength(2.0F, 1200.0F)
 
-val heartBlockSettings: FabricBlockSettings =
+val brainBlockSettings: FabricBlockSettings =
         FabricBlockSettings
                 .of(Material.METAL)
                 .strength(4.0F, 1200.0F)

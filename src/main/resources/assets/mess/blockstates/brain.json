@@ -1,7 +1,7 @@
     {
         "variants": {
             "": {
-                "model": "mess:block/heart"
+                "model": "mess:block/brain"
             }
         }
     }

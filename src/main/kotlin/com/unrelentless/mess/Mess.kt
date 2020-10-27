@@ -1,6 +1,6 @@
 package com.unrelentless.mess
 
-import com.unrelentless.mess.block.HeartBlock
+import com.unrelentless.mess.block.BrainBlock
 import com.unrelentless.mess.block.HighLimbBlock
 import com.unrelentless.mess.block.LowLimbBlock
 import com.unrelentless.mess.block.MidLimbBlock
@@ -26,14 +26,14 @@ class Mess : ModInitializer, ClientModInitializer {
                 LowLimbBlock.BLOCK,
                 MidLimbBlock.BLOCK,
                 HighLimbBlock.BLOCK,
-                HeartBlock.BLOCK
+                BrainBlock.BLOCK
         )
 
         val ITEMS: List<Item> = listOf(
                 LowLimbBlock.BLOCK_ITEM,
                 MidLimbBlock.BLOCK_ITEM,
                 HighLimbBlock.BLOCK_ITEM,
-                HeartBlock.BLOCK_ITEM,
+                BrainBlock.BLOCK_ITEM,
                 EnderLinkItem.ITEM
         )
 

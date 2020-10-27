@@ -1,12 +1,12 @@
 {
-  "block.mess.heart": "MESS Heart",
-  "block.mess.low_limb": "MESS Limb (Low)",
-  "block.mess.mid_limb": "MESS Limb (Mid)",
-  "block.mess.high_limb": "MESS Limb (High)",
+  "block.mess.brain": "Ender Brain",
+  "block.mess.low_limb": "Ender Limb (Low)",
+  "block.mess.mid_limb": "Ender Limb (Mid)",
+  "block.mess.high_limb": "Ender Limb (High)",
 
   "item.mess.ender_link": "Ender Link",
 
-  "container.mess.mess": "MESS",
+  "container.mess.mess": "Ender Storage",
 
   "search.mess.mess": "MESS Search"
 }

@@ -1,7 +1,7 @@
 package com.unrelentless.mess.block.entity
 
 import com.unrelentless.mess.Mess
-import com.unrelentless.mess.block.HeartBlock
+import com.unrelentless.mess.block.BrainBlock
 import com.unrelentless.mess.client.gui.screen.MessScreenHandler
 import com.unrelentless.mess.util.Level
 import com.unrelentless.mess.util.registerBlockEntity
@@ -23,13 +23,13 @@ import net.minecraft.text.TranslatableText
 import net.minecraft.util.Identifier
 
 
-class HeartBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
+class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
 
     companion object {
-        val IDENTIFIER = Identifier(Mess.IDENTIFIER, "heart_entity")
-        val ENTITY_TYPE: BlockEntityType<HeartBlockEntity> = registerBlockEntity(IDENTIFIER) {
+        val IDENTIFIER = Identifier(Mess.IDENTIFIER, "brain_entity")
+        val ENTITY_TYPE: BlockEntityType<BrainBlockEntity> = registerBlockEntity(IDENTIFIER) {
             BlockEntityType.Builder
-                    .create({ HeartBlockEntity() }, HeartBlock.BLOCK)
+                    .create({ BrainBlockEntity() }, BrainBlock.BLOCK)
                     .build(null)
         }
     }

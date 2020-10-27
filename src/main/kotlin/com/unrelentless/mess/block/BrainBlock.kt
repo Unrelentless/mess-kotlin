@@ -1,11 +1,11 @@
 package com.unrelentless.mess.block
 
 import com.unrelentless.mess.Mess
-import com.unrelentless.mess.block.entity.HeartBlockEntity
+import com.unrelentless.mess.block.entity.BrainBlockEntity
 import com.unrelentless.mess.block.entity.LimbBlockEntity
 import com.unrelentless.mess.client.gui.screen.MessScreen
 import com.unrelentless.mess.item.EnderLinkItem
-import com.unrelentless.mess.settings.heartBlockSettings
+import com.unrelentless.mess.settings.brainBlockSettings
 import com.unrelentless.mess.settings.messBlockItemSettings
 import com.unrelentless.mess.util.registerBlock
 import com.unrelentless.mess.util.registerBlockItem
@@ -23,10 +23,10 @@ import net.minecraft.world.BlockView
 import net.minecraft.world.World
 import java.util.*
 
-class HeartBlock: BlockWithEntity(heartBlockSettings) {
+class BrainBlock: BlockWithEntity(brainBlockSettings) {
     companion object {
-        val IDENTIFIER = Identifier(Mess.IDENTIFIER, "heart")
-        val BLOCK = registerBlock(HeartBlock(), IDENTIFIER)
+        val IDENTIFIER = Identifier(Mess.IDENTIFIER, "brain")
+        val BLOCK = registerBlock(BrainBlock(), IDENTIFIER)
         val BLOCK_ITEM = registerBlockItem(BLOCK, IDENTIFIER, messBlockItemSettings)
 
         fun findLimbs(
@@ -57,7 +57,7 @@ class HeartBlock: BlockWithEntity(heartBlockSettings) {
         }
     }
 
-    override fun createBlockEntity(world: BlockView?): BlockEntity? = HeartBlockEntity()
+    override fun createBlockEntity(world: BlockView?): BlockEntity? = BrainBlockEntity()
     override fun getRenderType(state: BlockState?): BlockRenderType = BlockRenderType.MODEL
 
     override fun onUse(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity, hand: Hand, hit: BlockHitResult): ActionResult {

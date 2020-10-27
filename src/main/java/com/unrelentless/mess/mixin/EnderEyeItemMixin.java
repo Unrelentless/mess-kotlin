@@ -1,10 +1,9 @@
 package com.unrelentless.mess.mixin;
 
-import com.unrelentless.mess.block.HeartBlock;
-import com.unrelentless.mess.block.entity.HeartBlockEntity;
+import com.unrelentless.mess.block.BrainBlock;
+import com.unrelentless.mess.block.entity.BrainBlockEntity;
 import com.unrelentless.mess.item.EnderLinkItem;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.EnderEyeItem;
 import net.minecraft.item.ItemStack;
@@ -34,7 +33,7 @@ public class EnderEyeItemMixin {
         BlockPos blockPos = context.getBlockPos();
         BlockState blockState = world.getBlockState(blockPos);
 
-        if(!(blockState.getBlock() instanceof HeartBlock) || !player.isSneaking()) {
+        if(!(blockState.getBlock() instanceof BrainBlock) || !player.isSneaking()) {
             cir.setReturnValue(cir.getReturnValue());
             return;
         }
@@ -46,10 +45,10 @@ public class EnderEyeItemMixin {
             tag.putInt("y", blockPos.getY());
             tag.putInt("z", blockPos.getZ());
 
-            linkedStack.putSubTag("heart", tag);
+            linkedStack.putSubTag("brain", tag);
             player.setStackInHand(context.getHand(), linkedStack);
 
-            ((HeartBlockEntity) world.getBlockEntity(blockPos)).chunkLoad(true);
+            ((BrainBlockEntity) world.getBlockEntity(blockPos)).chunkLoad(true);
         }
 
         cir.setReturnValue(ActionResult.CONSUME);
@@ -61,7 +60,7 @@ public class EnderEyeItemMixin {
         HitResult hitResult = ItemRaycastInvoker.invokeRaycast(world, user, RaycastContext.FluidHandling.NONE);
 
         if (hitResult.getType() == HitResult.Type.BLOCK
-                && world.getBlockState(((BlockHitResult)hitResult).getBlockPos()).isOf(HeartBlock.Companion.getBLOCK())) {
+                && world.getBlockState(((BlockHitResult)hitResult).getBlockPos()).isOf(BrainBlock.Companion.getBLOCK())) {
             cir.setReturnValue(TypedActionResult.pass(itemStack));
         }
     }

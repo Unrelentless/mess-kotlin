@@ -6,7 +6,7 @@
                 "entries": [
                     {
                         "type": "minecraft:item",
-                        "name": "mess:heart"
+                        "name": "mess:brain"
                     }
                 ],
                 "conditions": [
