@@ -13,7 +13,7 @@ class EnderLinkEntity(world: World,
 ): EyeOfEnderEntity(world, x, y, z) {
 
     companion object {
-        const val MAX_TICKS = 25
+        const val MAX_TICKS = 18
         const val MAX_LIFESPAN = 78
     }
 
