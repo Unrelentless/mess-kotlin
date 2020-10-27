@@ -13,7 +13,7 @@
       "item": "minecraft:obsidian"
     },
     "G": {
-      "item": "minecraft:glass"
+      "tag": "mess:glass"
     },
     "E": {
       "item": "minecraft:ender_eye"
