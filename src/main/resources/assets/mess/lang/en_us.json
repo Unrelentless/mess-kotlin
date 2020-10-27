@@ -8,5 +8,7 @@
 
   "container.mess.mess": "MESS",
 
-  "search.mess.mess": "MESS Search"
+  "search.mess.mess": "MESS Search",
+
+  "message.mess.link_broken": "The link to the Ender Brain has broken."
 }
