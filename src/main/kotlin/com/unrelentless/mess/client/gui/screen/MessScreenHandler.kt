@@ -30,34 +30,12 @@ class MessScreenHandler(
         syncId: Int,
         private val playerInventory: PlayerInventory,
         private val allLimbs: Array<LimbInventory>,
-        private val owner: BrainBlockEntity? = null
+        val owner: BrainBlockEntity? = null
 ) : ScreenHandler(HANDLER_TYPE, syncId) {
 
     companion object {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "mess_screen_handler")
-        val C2S_IDENTIFIER = Identifier(Mess.IDENTIFIER, "sync_server")
         val HANDLER_TYPE: ScreenHandlerType<MessScreenHandler> = ScreenHandlerRegistry.registerExtended(IDENTIFIER, ::MessScreenHandler)
-
-        init {
-            ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
-                val scrollPosition = buffer.readFloat()
-                val searchString = buffer.readString()
-                val tabs: Map<Level, Boolean> = Level.values().map {
-                    Pair(buffer.readEnumConstant(Level::class.java), buffer.readBoolean())
-                }.toMap()
-
-
-                context.taskQueue.execute {
-                    (context.player.currentScreenHandler as? MessScreenHandler).let {
-                        for(tab in tabs) {
-                            it?.selectedTabs?.set(tab.key, tab.value)
-                        }
-                        it?.updateInfo(searchString, scrollPosition)
-                        it?.owner?.updateTabs(it.selectedTabs)
-                    }
-                }
-            }
-        }
     }
 
     constructor(syncId: Int, playerInventory: PlayerInventory, buf: PacketByteBuf): this(
@@ -280,6 +258,6 @@ class MessScreenHandler(
             buffer.writeBoolean(it.value)
         }
 
-        ClientSidePacketRegistry.INSTANCE.sendToServer(C2S_IDENTIFIER, buffer)
+        ClientSidePacketRegistry.INSTANCE.sendToServer(Mess.C2S_IDENTIFIER, buffer)
     }
 }

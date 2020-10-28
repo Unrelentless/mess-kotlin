@@ -3,10 +3,12 @@
   "package": "com.unrelentless.mess.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "MinecraftClientMixin",
     "EnderEyeItemMixin",
     "ItemRaycastInvoker",
     "EyeOfEnderEntityAccessor"
+  ],
+  "client": [
+    "MinecraftClientMixin"
   ],
   "injectors": {
     "defaultRequire": 1
