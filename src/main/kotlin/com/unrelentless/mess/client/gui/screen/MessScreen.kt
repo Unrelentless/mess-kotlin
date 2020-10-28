@@ -45,7 +45,7 @@ class MessScreen(
         fun openScreen(world: World, pos: BlockPos, player: PlayerEntity) {
             BrainBlock.BLOCK.defaultState.createScreenHandlerFactory(world, pos).let {
                 val blockEntity = world.getBlockEntity(pos) as? BrainBlockEntity
-                blockEntity?.setLimbs(BrainBlock.findLimbs(world, pos).toTypedArray())
+                blockEntity?.updateLimbs()
                 player.openHandledScreen(it)
             }
         }

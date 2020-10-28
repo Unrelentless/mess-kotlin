@@ -21,6 +21,9 @@ import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.text.Text
 import net.minecraft.text.TranslatableText
 import net.minecraft.util.Identifier
+import net.minecraft.util.math.BlockPos
+import net.minecraft.world.World
+import java.util.HashSet
 
 
 class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
@@ -31,6 +34,34 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
             BlockEntityType.Builder
                     .create({ BrainBlockEntity() }, BrainBlock.BLOCK)
                     .build(null)
+        }
+
+        private fun findLimbs(
+                world: World?,
+                pos: BlockPos,
+                ignoringPos: BlockPos? = null,
+                set: HashSet<LimbBlockEntity> = hashSetOf()
+        ): HashSet<LimbBlockEntity> {
+            val posArray = arrayOf(
+                    BlockPos(1, 0, 0),
+                    BlockPos(0, 1, 0),
+                    BlockPos(0, 0, 1),
+                    BlockPos(-1, 0, 0),
+                    BlockPos(0, -1, 0),
+                    BlockPos(0, 0, -1)
+            )
+
+            // Recursion? - Why not!
+            posArray.forEach {
+                val nextPos = pos.add(it)
+                val nextBlock = world?.getBlockEntity(nextPos)
+                if (nextPos != ignoringPos && nextBlock is LimbBlockEntity && !set.contains(nextBlock) && !nextBlock.isRemoved) {
+                    set.add(nextBlock)
+                    findLimbs(world, nextPos, ignoringPos, set)
+                }
+            }
+
+            return set
         }
     }
 
@@ -96,8 +127,14 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
         return tag
     }
 
-    fun setLimbs(limbs: Array<LimbBlockEntity>?) {
-        this.limbs = limbs
+    fun onPlaced() = findLimbs(world as World, pos).forEach{it.addBrain(this)}
+    fun onBroken() = findLimbs(world as World, pos).forEach{it.removeBrain(this)}
+
+    fun updateLimbs(ignoringPos: BlockPos? = null) {
+        println("OLD LIMBS: ${limbs?.size}")
+        limbs = findLimbs(world, pos, ignoringPos).toTypedArray()
+        limbs?.forEach { it.updateBrains() }
+        println("NEW LIMBS: ${limbs?.size}")
     }
 
     fun updateTabs(selectedTabs:  HashMap<Level, Boolean>) {
@@ -108,7 +145,7 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     }
 
     fun chunkLoad(chunkLoad: Boolean) {
-        this.setChunkLoaded(chunkLoad)
+        setChunkLoaded(chunkLoad)
         limbs?.forEach{it.setChunkLoaded(chunkLoad)}
     }
 }
