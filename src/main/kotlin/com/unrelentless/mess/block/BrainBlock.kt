@@ -41,13 +41,13 @@ class BrainBlock: BlockWithEntity(brainBlockSettings) {
         return ActionResult.SUCCESS
     }
 
+    override fun onBreak(world: World, pos: BlockPos, state: BlockState, player: PlayerEntity?) {
+        if(!world.isClient) (world.getBlockEntity(pos) as? BrainBlockEntity)?.onBroken()
+        super.onBreak(world, pos, state, player)
+    }
+
     override fun onPlaced(world: World, pos: BlockPos, state: BlockState, placer: LivingEntity?, itemStack: ItemStack?) {
         if(!world.isClient) (world.getBlockEntity(pos) as? BrainBlockEntity)?.onPlaced()
         super.onPlaced(world, pos, state, placer, itemStack)
-    }
-
-    override fun afterBreak(world: World?, player: PlayerEntity, pos: BlockPos, state: BlockState, blockEntity: BlockEntity?, stack: ItemStack?) {
-        (blockEntity as? BrainBlockEntity)?.onBroken()
-        super.onBreak(world, pos, state, player)
     }
 }
