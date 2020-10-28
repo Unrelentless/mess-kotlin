@@ -24,7 +24,6 @@ import net.minecraft.util.Identifier
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Direction
 import net.minecraft.world.World
-import java.util.HashSet
 
 
 class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
@@ -41,18 +40,19 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
                 world: World?,
                 pos: BlockPos,
                 ignoringPos: BlockPos? = null,
-                set: ArrayList<LimbBlockEntity> = arrayListOf()
+                list: ArrayList<LimbBlockEntity> = arrayListOf()
         ): ArrayList<LimbBlockEntity> {
             Direction.values().forEach {
                 val nextPos = pos.offset(it)
-                val nextBlock = world?.getBlockEntity(nextPos)
-                if (nextPos != ignoringPos && nextBlock is LimbBlockEntity && !set.contains(nextBlock) && !nextBlock.isRemoved) {
-                    set.add(nextBlock)
-                    findLimbs(world, nextPos, ignoringPos, set)
+                val nextBlock = world?.getBlockEntity(nextPos) as? LimbBlockEntity ?: return@forEach
+
+                if (nextPos != ignoringPos && !list.contains(nextBlock) && !nextBlock.isRemoved) {
+                    list.add(nextBlock)
+                    findLimbs(world, nextPos, ignoringPos, list)
                 }
             }
 
-            return set
+            return list
         }
     }
 
@@ -77,7 +77,6 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     )
 
     override fun getDisplayName(): Text = TranslatableText("container." + Mess.IDENTIFIER + ".mess")
-
     override fun writeScreenOpeningData(serverPlayerEntity: ServerPlayerEntity?, packetByteBuf: PacketByteBuf?) {
         val sizes = limbs?.map{it.level.size}?.toIntArray()
         val compoundTag = CompoundTag()
@@ -120,12 +119,9 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
 
     fun onPlaced() = findLimbs(world as World, pos).forEach{it.addBrain(this)}
     fun onBroken() = findLimbs(world as World, pos).forEach{it.removeBrain(this)}
-
+    fun updateBrains() = limbs?.forEach(LimbBlockEntity::findBrains)
     fun updateLimbs(ignoringPos: BlockPos? = null) {
-        println("OLD LIMBS: ${limbs?.size}")
         limbs = findLimbs(world, pos, ignoringPos).toTypedArray()
-        limbs?.forEach { it.updateBrains() }
-        println("NEW LIMBS: ${limbs?.size}")
     }
 
     fun updateTabs(selectedTabs:  HashMap<Level, Boolean>) {

@@ -6,6 +6,7 @@ import net.minecraft.block.BlockState
 import net.minecraft.block.InventoryProvider
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.block.entity.BlockEntityType
+import net.minecraft.entity.ai.brain.Brain
 import net.minecraft.inventory.SidedInventory
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.util.math.BlockPos
@@ -26,7 +27,8 @@ open class LimbBlockEntity(
         ): Pair<ArrayList<BlockPos>, ArrayList<BrainBlockEntity>> {
             Direction.values().forEach {
                 val nextPos = pos.offset(it)
-                val nextBlock = world?.getBlockEntity(nextPos)
+                val nextBlock = world?.getBlockEntity(nextPos) ?: return@forEach
+
                 if (nextBlock is LimbBlockEntity && !set.first.contains(nextPos) && !nextBlock.isRemoved) {
                     set.first.add(nextPos)
                     findLimbsAndBrains(world, nextPos, set)
@@ -42,16 +44,10 @@ open class LimbBlockEntity(
     val inventory: LimbInventory by lazy { LimbInventory(level, this) }
     private val linkedBrains: MutableSet<BrainBlockEntity> = mutableSetOf()
 
-    override fun fromTag(state: BlockState?, tag: CompoundTag) {
-        super.fromTag(state, tag.deserializeLimb(inventory))
-    }
-
-    override fun toTag(tag: CompoundTag): CompoundTag {
-        return super.toTag(tag.serializeLimb(inventory))
-    }
-
     override fun fromClientTag(tag: CompoundTag) = fromTag(cachedState, tag)
     override fun toClientTag(tag: CompoundTag): CompoundTag = toTag(tag)
+    override fun fromTag(state: BlockState?, tag: CompoundTag) = super.fromTag(state, tag.deserializeLimb(inventory))
+    override fun toTag(tag: CompoundTag): CompoundTag = super.toTag(tag.serializeLimb(inventory))
     override fun getInventory(state: BlockState?, world: WorldAccess?, pos: BlockPos?): SidedInventory = inventory
 
     override fun sync() {
@@ -60,35 +56,23 @@ open class LimbBlockEntity(
     }
 
     fun onPlaced() {
-        updateBrains()
-        println("ON PLACE LIMB - BRAINS = ${linkedBrains.size}")
-        linkedBrains.forEach {
-            it.updateLimbs()
-        }
+        findBrains()
+        linkedBrains.forEach(BrainBlockEntity::updateLimbs)
     }
 
     fun onBroken(fromPos: BlockPos) {
-        println("ON BROKE LIMB - BRAINS = ${linkedBrains.size}")
         linkedBrains.forEach { it.updateLimbs(fromPos) }
+        linkedBrains.forEach(BrainBlockEntity::updateBrains)
     }
 
-    fun addBrain(brainBlockEntity: BrainBlockEntity) {
-        println("ON ADD BRAIN BEFORE: ${linkedBrains.size}")
-        linkedBrains.add(brainBlockEntity)
-        println("ON ADD BRAIN AFTER: ${linkedBrains.size}")
-    }
-
+    fun addBrain(brainBlockEntity: BrainBlockEntity) = linkedBrains.add(brainBlockEntity)
     fun removeBrain(brainBlockEntity: BrainBlockEntity) {
-        println("ON REMOVE BRAIN BEFORE: ${linkedBrains.size}")
         linkedBrains.remove(brainBlockEntity)
-        println("ON REMOVE BRAIN AFTER: ${linkedBrains.size}")
         if(linkedBrains.isEmpty()) setChunkLoaded(false)
     }
 
-    fun updateBrains() {
-        println("ON UPDATE $pos BRAINS BEFORE: ${linkedBrains.size}")
+    fun findBrains() {
         linkedBrains.clear()
         linkedBrains.addAll(findLimbsAndBrains(world as World, pos).second)
-        println("ON UPDATE $pos BRAINS AFTER: ${linkedBrains.size}")
     }
 }

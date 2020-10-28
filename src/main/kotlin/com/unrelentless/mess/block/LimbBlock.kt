@@ -1,6 +1,5 @@
 package com.unrelentless.mess.block
 
-import com.unrelentless.mess.block.entity.BrainBlockEntity
 import com.unrelentless.mess.block.entity.LimbBlockEntity
 import com.unrelentless.mess.util.Level
 import com.unrelentless.mess.util.*
@@ -24,7 +23,6 @@ import net.minecraft.util.Hand
 import net.minecraft.util.collection.DefaultedList
 import net.minecraft.util.hit.BlockHitResult
 import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
 import net.minecraft.world.BlockView
 import net.minecraft.world.World
 import net.minecraft.world.WorldAccess
@@ -94,8 +92,7 @@ open class LimbBlock(settings: FabricBlockSettings, private val level: Level): B
 
     override fun neighborUpdate(state: BlockState, world: World, pos: BlockPos, block: Block, fromPos: BlockPos, notify: Boolean) {
         super.neighborUpdate(state,world, pos, block, fromPos, notify)
-        if(!world.isClient)
-            (world.getBlockEntity(pos) as? LimbBlockEntity)?.updateBrains()
+        if(!world.isClient) (world.getBlockEntity(pos) as? LimbBlockEntity)?.findBrains()
     }
 
     override fun getDroppedStacks(state: BlockState?, builder: LootContext.Builder?): MutableList<ItemStack> {
