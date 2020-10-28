@@ -9,6 +9,7 @@ import net.minecraft.block.entity.BlockEntityType
 import net.minecraft.inventory.SidedInventory
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.util.math.BlockPos
+import net.minecraft.util.math.Direction
 import net.minecraft.world.World
 import net.minecraft.world.WorldAccess
 
@@ -21,23 +22,13 @@ open class LimbBlockEntity(
         private fun findLimbsAndBrains(
                 world: World?,
                 pos: BlockPos,
-                set: Pair<ArrayList<LimbBlockEntity>, ArrayList<BrainBlockEntity>> = Pair(arrayListOf(), arrayListOf())
-        ): Pair<ArrayList<LimbBlockEntity>, ArrayList<BrainBlockEntity>> {
-            val posArray = arrayOf(
-                    BlockPos(1, 0, 0),
-                    BlockPos(0, 1, 0),
-                    BlockPos(0, 0, 1),
-                    BlockPos(-1, 0, 0),
-                    BlockPos(0, -1, 0),
-                    BlockPos(0, 0, -1)
-            )
-
-            // Recursion? - Why not!
-            posArray.forEach {
-                val nextPos = pos.add(it)
+                set: Pair<ArrayList<BlockPos>, ArrayList<BrainBlockEntity>> = Pair(arrayListOf(), arrayListOf())
+        ): Pair<ArrayList<BlockPos>, ArrayList<BrainBlockEntity>> {
+            Direction.values().forEach {
+                val nextPos = pos.offset(it)
                 val nextBlock = world?.getBlockEntity(nextPos)
-                if (nextBlock is LimbBlockEntity && !set.first.contains(nextBlock) && !nextBlock.isRemoved) {
-                    set.first.add(nextBlock)
+                if (nextBlock is LimbBlockEntity && !set.first.contains(nextPos) && !nextBlock.isRemoved) {
+                    set.first.add(nextPos)
                     findLimbsAndBrains(world, nextPos, set)
                 } else if(nextBlock is BrainBlockEntity && !set.second.contains(nextBlock)) {
                     set.second.add(nextBlock)

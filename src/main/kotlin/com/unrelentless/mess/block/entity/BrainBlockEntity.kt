@@ -22,6 +22,7 @@ import net.minecraft.text.Text
 import net.minecraft.text.TranslatableText
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.BlockPos
+import net.minecraft.util.math.Direction
 import net.minecraft.world.World
 import java.util.HashSet
 
@@ -40,20 +41,10 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
                 world: World?,
                 pos: BlockPos,
                 ignoringPos: BlockPos? = null,
-                set: HashSet<LimbBlockEntity> = hashSetOf()
-        ): HashSet<LimbBlockEntity> {
-            val posArray = arrayOf(
-                    BlockPos(1, 0, 0),
-                    BlockPos(0, 1, 0),
-                    BlockPos(0, 0, 1),
-                    BlockPos(-1, 0, 0),
-                    BlockPos(0, -1, 0),
-                    BlockPos(0, 0, -1)
-            )
-
-            // Recursion? - Why not!
-            posArray.forEach {
-                val nextPos = pos.add(it)
+                set: ArrayList<LimbBlockEntity> = arrayListOf()
+        ): ArrayList<LimbBlockEntity> {
+            Direction.values().forEach {
+                val nextPos = pos.offset(it)
                 val nextBlock = world?.getBlockEntity(nextPos)
                 if (nextPos != ignoringPos && nextBlock is LimbBlockEntity && !set.contains(nextBlock) && !nextBlock.isRemoved) {
                     set.add(nextBlock)
