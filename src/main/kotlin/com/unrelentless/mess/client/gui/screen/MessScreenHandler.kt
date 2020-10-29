@@ -1,18 +1,16 @@
 package com.unrelentless.mess.client.gui.screen
 
 import com.unrelentless.mess.Mess
-import com.unrelentless.mess.block.BrainBlock
 import com.unrelentless.mess.block.entity.BrainBlockEntity
+import com.unrelentless.mess.block.entity.LimbBlockEntity
 import com.unrelentless.mess.util.Level
 import com.unrelentless.mess.util.LimbInventory
 import com.unrelentless.mess.util.LimbSlot
 import com.unrelentless.mess.util.deserializeInnerStack
 import io.netty.buffer.Unpooled
 import net.fabricmc.fabric.api.network.ClientSidePacketRegistry
-import net.fabricmc.fabric.api.network.ServerSidePacketRegistry
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
 import net.minecraft.block.BlockState
-import net.minecraft.client.item.TooltipContext
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.item.ItemStack
@@ -23,7 +21,6 @@ import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.ScreenHandlerType
 import net.minecraft.screen.slot.Slot
 import net.minecraft.screen.slot.SlotActionType
-import net.minecraft.util.Formatting
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.World
@@ -33,8 +30,7 @@ import kotlin.math.min
 class MessScreenHandler(
         syncId: Int,
         private val playerInventory: PlayerInventory,
-        private val allLimbs: Array<LimbInventory>,
-        val owner: BrainBlockEntity? = null
+        val owner: BrainBlockEntity?,
 ) : ScreenHandler(HANDLER_TYPE, syncId) {
 
     companion object {
@@ -53,17 +49,20 @@ class MessScreenHandler(
     constructor(syncId: Int, playerInventory: PlayerInventory, buf: PacketByteBuf): this(
             syncId,
             playerInventory,
-            buf.readIntArray().map { int ->
-                LimbInventory(Level.values().find { it.size == int }!!, null)
-            }.toTypedArray()
+            null
     ) {
+        allLimbs = buf.readIntArray().map { int ->
+            LimbInventory(Level.values().find { it.size == int }!!, null)
+        }.toTypedArray()
+
         val items = (buf.readCompoundTag()?.get("items") as ListTag)
                 .mapNotNull { (it as CompoundTag).deserializeInnerStack() }
+
         val tabs: Map<Level, Boolean> = Level.values().map {
             Pair(buf.readEnumConstant(Level::class.java), buf.readBoolean())
         }.toMap()
 
-        allLimbs.forEachIndexed {
+        allLimbs?.forEachIndexed {
             index, limb -> limb.depositStack(items[index])
         }
 
@@ -82,6 +81,12 @@ class MessScreenHandler(
     private var searchString = ""
     private var scrolledRows: Int = 0
     private var tabbedLimbs: Array<LimbInventory> = emptyArray()
+
+    private var allLimbs: Array<LimbInventory>? = null
+        get() = if(owner != null)
+            owner.limbs?.map(LimbBlockEntity::inventory)?.toTypedArray()
+        else
+            field
 
     var limbs: Array<LimbInventory> = emptyArray()
         private set
@@ -138,7 +143,8 @@ class MessScreenHandler(
         }
 
         slot.markDirty()
-        updateInfo(this.searchString, this.scrollPosition)
+        updateInfo()
+        propogateChangesToPlayers()
 
         return slotStack
     }
@@ -166,11 +172,13 @@ class MessScreenHandler(
             return super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, playerEntity)
         }
 
-        updateInfo(this.searchString, this.scrollPosition)
+        updateInfo()
+        propogateChangesToPlayers()
+
         return ItemStack.EMPTY
     }
 
-    fun updateInfo(searchString: String, scrollPosition: Float) {
+    fun updateInfo(searchString: String = this.searchString, scrollPosition: Float = this.scrollPosition) {
         this.searchString = searchString
         this.scrollPosition = scrollPosition
 
@@ -178,15 +186,29 @@ class MessScreenHandler(
         updateTabbedLimbs()
         updateLimbs()
         updateLimbsToDisplay()
-        syncToServer()
 
         if(playerInventory.player.world.isClient) {
+            syncToServer()
             createNewSlots()
         }
     }
 
+    private fun propogateChangesToPlayers() {
+        if(playerInventory.player.world.isClient) return
+
+        playerInventory.player.world?.players
+                ?.filter { it != playerInventory.player }
+                ?.mapNotNull { it.currentScreenHandler as? MessScreenHandler }
+                ?.forEach(MessScreenHandler::updateInfo)
+    }
+
     fun toggleTab(selectedTabLevel: Level) {
         this.selectedTabs[selectedTabLevel] = !this.selectedTabs[selectedTabLevel]!!
+    }
+
+    fun updateClientLimbs(limbs: Array<LimbInventory>) {
+        allLimbs = limbs
+        updateInfo()
     }
 
     private fun calculateScrolledRows() {
@@ -195,18 +217,14 @@ class MessScreenHandler(
     }
 
     private fun updateTabbedLimbs() {
-        tabbedLimbs = allLimbs.sortedBy(LimbInventory::isEmpty).filter {
+        tabbedLimbs = allLimbs?.sortedBy(LimbInventory::isEmpty)?.filter {
             selectedTabs[it.level] == true
-        }.toTypedArray()
+        }?.toTypedArray() ?: emptyArray()
     }
 
     private fun updateLimbs() {
         limbs = tabbedLimbs.filter { limb ->
-//            val toolTip = limb.getStack().getTooltip(null, TooltipContext.Default.NORMAL)
-//                    .map { Formatting.strip(it.string)?.trim()?.toLowerCase() }
-//                    .first { !it.isNullOrEmpty() }
-
-            limb.getStack().item.toString().contains(searchString) ?: false
+            limb.getStack().item.toString().contains(searchString)
         }.toTypedArray()
     }
 
