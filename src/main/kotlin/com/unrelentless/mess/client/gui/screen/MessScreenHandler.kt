@@ -1,6 +1,7 @@
 package com.unrelentless.mess.client.gui.screen
 
 import com.unrelentless.mess.Mess
+import com.unrelentless.mess.block.BrainBlock
 import com.unrelentless.mess.block.entity.BrainBlockEntity
 import com.unrelentless.mess.util.Level
 import com.unrelentless.mess.util.LimbInventory
@@ -10,6 +11,7 @@ import io.netty.buffer.Unpooled
 import net.fabricmc.fabric.api.network.ClientSidePacketRegistry
 import net.fabricmc.fabric.api.network.ServerSidePacketRegistry
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
+import net.minecraft.block.BlockState
 import net.minecraft.client.item.TooltipContext
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
@@ -23,6 +25,8 @@ import net.minecraft.screen.slot.Slot
 import net.minecraft.screen.slot.SlotActionType
 import net.minecraft.util.Formatting
 import net.minecraft.util.Identifier
+import net.minecraft.util.math.BlockPos
+import net.minecraft.world.World
 import kotlin.math.min
 
 
@@ -36,6 +40,14 @@ class MessScreenHandler(
     companion object {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "mess_screen_handler")
         val HANDLER_TYPE: ScreenHandlerType<MessScreenHandler> = ScreenHandlerRegistry.registerExtended(IDENTIFIER, ::MessScreenHandler)
+
+        fun openScreen(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity) {
+            state.createScreenHandlerFactory(world, pos).let {
+                val blockEntity = world.getBlockEntity(pos) as? BrainBlockEntity
+                blockEntity?.updateLimbs()
+                player.openHandledScreen(it)
+            }
+        }
     }
 
     constructor(syncId: Int, playerInventory: PlayerInventory, buf: PacketByteBuf): this(
@@ -190,11 +202,11 @@ class MessScreenHandler(
 
     private fun updateLimbs() {
         limbs = tabbedLimbs.filter { limb ->
-            val toolTip = limb.getStack().getTooltip(null, TooltipContext.Default.NORMAL)
-                    .map { Formatting.strip(it.string)?.trim()?.toLowerCase() }
-                    .first { !it.isNullOrEmpty() }
+//            val toolTip = limb.getStack().getTooltip(null, TooltipContext.Default.NORMAL)
+//                    .map { Formatting.strip(it.string)?.trim()?.toLowerCase() }
+//                    .first { !it.isNullOrEmpty() }
 
-            toolTip?.contains(searchString) ?: false
+            limb.getStack().item.toString().contains(searchString) ?: false
         }.toTypedArray()
     }
 

@@ -3,6 +3,7 @@ package com.unrelentless.mess.block
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.block.entity.BrainBlockEntity
 import com.unrelentless.mess.client.gui.screen.MessScreen
+import com.unrelentless.mess.client.gui.screen.MessScreenHandler
 import com.unrelentless.mess.item.EnderLinkItem
 import com.unrelentless.mess.settings.brainBlockSettings
 import com.unrelentless.mess.settings.messBlockItemSettings
@@ -34,10 +35,10 @@ class BrainBlock: BlockWithEntity(brainBlockSettings) {
     override fun getRenderType(state: BlockState?): BlockRenderType = BlockRenderType.MODEL
 
     override fun onUse(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity, hand: Hand, hit: BlockHitResult): ActionResult {
-        if(world.isClient || (player.isSneaking && player.mainHandStack.item == EnderLinkItem.ITEM))
-            return ActionResult.SUCCESS
+        if(!(player.isSneaking && player.mainHandStack.item == EnderLinkItem.ITEM)) {
+            MessScreenHandler.openScreen(state, world, pos, player)
+        }
 
-        MessScreen.openScreen(world, pos, player)
         return ActionResult.SUCCESS
     }
 

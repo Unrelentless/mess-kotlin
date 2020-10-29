@@ -1,8 +1,10 @@
 package com.unrelentless.mess.item
 
 import com.unrelentless.mess.Mess
+import com.unrelentless.mess.block.BrainBlock
 import com.unrelentless.mess.block.entity.BrainBlockEntity
 import com.unrelentless.mess.client.gui.screen.MessScreen
+import com.unrelentless.mess.client.gui.screen.MessScreenHandler
 import com.unrelentless.mess.entity.EnderLinkEntity
 import com.unrelentless.mess.mixin.EyeOfEnderEntityAccessor
 import com.unrelentless.mess.settings.enderLinkItemSettings
@@ -73,8 +75,8 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
                 }
 
                 player.sendMessage(TranslatableText("message." + Mess.IDENTIFIER + ".link_broken"), false)
-            } else{
-                MessScreen.openScreen(brainWorld, brain.first, player)
+            } else {
+                MessScreenHandler.openScreen(BrainBlock.BLOCK.defaultState, world, brain.first, player)
             }
         }
 

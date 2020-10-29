@@ -42,13 +42,6 @@ class MessScreen(
         override fun renderOnClient() {
             ScreenRegistry.register(MessScreenHandler.HANDLER_TYPE, ::MessScreen)
         }
-        fun openScreen(world: World, pos: BlockPos, player: PlayerEntity) {
-            BrainBlock.BLOCK.defaultState.createScreenHandlerFactory(world, pos).let {
-                val blockEntity = world.getBlockEntity(pos) as? BrainBlockEntity
-                blockEntity?.updateLimbs()
-                player.openHandledScreen(it)
-            }
-        }
     }
 
     private var scrolling = false

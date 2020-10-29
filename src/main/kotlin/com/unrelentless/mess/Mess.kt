@@ -13,8 +13,6 @@ import com.unrelentless.mess.item.EnderLinkItem
 import com.unrelentless.mess.util.Clientside
 import com.unrelentless.mess.util.Level
 import net.fabricmc.api.ClientModInitializer
-import net.fabricmc.api.EnvType
-import net.fabricmc.api.Environment
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.network.ServerSidePacketRegistry
 import net.minecraft.block.Block
@@ -53,11 +51,10 @@ class Mess : ModInitializer, ClientModInitializer {
         }
     }
 
-    @Environment(EnvType.SERVER)
     override fun onInitialize() {
         ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
             val scrollPosition = buffer.readFloat()
-            val searchString = buffer.readString()
+            val searchString = buffer.readString(Short.MAX_VALUE.toInt())
             val tabs: Map<Level, Boolean> = Level.values().map {
                 Pair(buffer.readEnumConstant(Level::class.java), buffer.readBoolean())
             }.toMap()
@@ -75,7 +72,6 @@ class Mess : ModInitializer, ClientModInitializer {
         }
     }
 
-    @Environment(EnvType.CLIENT)
     override fun onInitializeClient() {
         listOf(BLOCKS, ITEMS, ENTITIES, SCREENS)
                 .flatten()
