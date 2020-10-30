@@ -6,7 +6,6 @@ import net.minecraft.block.BlockState
 import net.minecraft.block.InventoryProvider
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.block.entity.BlockEntityType
-import net.minecraft.entity.ai.brain.Brain
 import net.minecraft.inventory.SidedInventory
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.util.math.BlockPos
@@ -53,25 +52,41 @@ open class LimbBlockEntity(
     override fun sync() {
         super.sync()
         markDirty()
+        linkedBrains.forEach(BrainBlockEntity::contentChanged)
     }
 
     fun onPlaced() {
+        if(world?.isClient == true) return
+
         findBrains()
         linkedBrains.forEach(BrainBlockEntity::updateLimbs)
+        linkedBrains.forEach(BrainBlockEntity::contentChanged)
     }
 
     fun onBroken(fromPos: BlockPos) {
+        if(world?.isClient == true) return
+
         linkedBrains.forEach { it.updateLimbs(fromPos) }
         linkedBrains.forEach(BrainBlockEntity::updateBrains)
+        linkedBrains.forEach(BrainBlockEntity::contentChanged)
     }
 
-    fun addBrain(brainBlockEntity: BrainBlockEntity) = linkedBrains.add(brainBlockEntity)
+    fun addBrain(brainBlockEntity: BrainBlockEntity) {
+        if(world?.isClient == true) return
+
+        linkedBrains.add(brainBlockEntity)
+    }
+
     fun removeBrain(brainBlockEntity: BrainBlockEntity) {
+        if(world?.isClient == true) return
+
         linkedBrains.remove(brainBlockEntity)
         if(linkedBrains.isEmpty()) setChunkLoaded(false)
     }
 
     fun findBrains() {
+        if(world?.isClient == true) return
+
         linkedBrains.clear()
         linkedBrains.addAll(findLimbsAndBrains(world as World, pos).second)
     }

@@ -7,6 +7,8 @@ import com.unrelentless.mess.util.Level
 import com.unrelentless.mess.util.registerBlockEntity
 import com.unrelentless.mess.util.serializeInnerStackToTag
 import com.unrelentless.mess.util.setChunkLoaded
+import io.netty.buffer.Unpooled
+import net.fabricmc.fabric.api.network.ServerSidePacketRegistry
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory
 import net.minecraft.block.BlockState
 import net.minecraft.block.entity.BlockEntity
@@ -54,6 +56,22 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
 
             return list
         }
+
+        private fun writeLimbsToBuffer(limbs : Array<LimbBlockEntity>?, buf: PacketByteBuf?) {
+            val sizes = limbs?.map{it.level.size}?.toIntArray()
+            val compoundTag = CompoundTag()
+            val listTag = ListTag()
+            limbs?.map { it.inventory.getStack().serializeInnerStackToTag() }?.forEach{listTag.add(it)}
+            compoundTag.put("items", listTag)
+
+            buf?.writeIntArray(sizes)
+            buf?.writeCompoundTag(compoundTag)
+
+//            selectedTabs.forEach {
+//                packetByteBuf?.writeEnumConstant(it.key)
+//                packetByteBuf?.writeBoolean(it.value)
+//            }
+        }
     }
 
     private val selectedTabs: HashMap<Level, Boolean> = hashMapOf(
@@ -62,35 +80,27 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
             Pair(Level.HIGH, true)
     )
 
-    private var limbs: Array<LimbBlockEntity>? = null
+    var limbs: Array<LimbBlockEntity>? = null
+        private set
         get() = field?.sortedBy{it.inventory.isEmpty}?.toTypedArray()
 
     override fun createMenu(
             syncId: Int,
             playerInventory: PlayerInventory,
             player: PlayerEntity
-    ): ScreenHandler? = MessScreenHandler(
-            syncId,
-            playerInventory,
-            limbs?.map(LimbBlockEntity::inventory)?.toTypedArray() ?: emptyArray(),
-            this
-    )
+    ): ScreenHandler? {
+        updateBrains()
+        updateLimbs()
+        return MessScreenHandler(
+                syncId,
+                playerInventory,
+                this
+        )
+    }
 
     override fun getDisplayName(): Text = TranslatableText("container." + Mess.IDENTIFIER + ".mess")
     override fun writeScreenOpeningData(serverPlayerEntity: ServerPlayerEntity?, packetByteBuf: PacketByteBuf?) {
-        val sizes = limbs?.map{it.level.size}?.toIntArray()
-        val compoundTag = CompoundTag()
-        val listTag = ListTag()
-        limbs?.map { it.inventory.getStack().serializeInnerStackToTag() }?.forEach{listTag.add(it)}
-        compoundTag.put("items", listTag)
-
-        packetByteBuf?.writeIntArray(sizes)
-        packetByteBuf?.writeCompoundTag(compoundTag)
-
-        selectedTabs.forEach {
-            packetByteBuf?.writeEnumConstant(it.key)
-            packetByteBuf?.writeBoolean(it.value)
-        }
+        writeLimbsToBuffer(limbs, packetByteBuf)
     }
 
     override fun fromTag(state: BlockState?, compoundTag: CompoundTag?) {
@@ -122,6 +132,17 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     fun updateBrains() = limbs?.forEach(LimbBlockEntity::findBrains)
     fun updateLimbs(ignoringPos: BlockPos? = null) {
         limbs = findLimbs(world, pos, ignoringPos).toTypedArray()
+    }
+
+    fun contentChanged(player: PlayerEntity? = null) {
+        world?.players
+                ?.filter { it != player }
+                ?.filter { it.currentScreenHandler is MessScreenHandler }
+                ?.forEach {
+                    val buf = PacketByteBuf(Unpooled.buffer())
+                    writeLimbsToBuffer(limbs, buf)
+                    ServerSidePacketRegistry.INSTANCE.sendToPlayer(it, Mess.S2C_IDENTIFIER, buf)
+                }
     }
 
     fun updateTabs(selectedTabs:  HashMap<Level, Boolean>) {

@@ -3,6 +3,7 @@ package com.unrelentless.mess.client.gui.screen
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.block.BrainBlock
 import com.unrelentless.mess.block.entity.BrainBlockEntity
+import com.unrelentless.mess.block.entity.LimbBlockEntity
 import com.unrelentless.mess.util.Level
 import com.unrelentless.mess.util.LimbInventory
 import com.unrelentless.mess.util.LimbSlot
@@ -33,7 +34,6 @@ import kotlin.math.min
 class MessScreenHandler(
         syncId: Int,
         private val playerInventory: PlayerInventory,
-        private val allLimbs: Array<LimbInventory>,
         val owner: BrainBlockEntity? = null
 ) : ScreenHandler(HANDLER_TYPE, syncId) {
 
@@ -52,25 +52,30 @@ class MessScreenHandler(
 
     constructor(syncId: Int, playerInventory: PlayerInventory, buf: PacketByteBuf): this(
             syncId,
-            playerInventory,
-            buf.readIntArray().map { int ->
-                LimbInventory(Level.values().find { it.size == int }!!, null)
-            }.toTypedArray()
+            playerInventory
     ) {
+        allLimbs = buf.readIntArray().map { int ->
+                    LimbInventory(Level.values().find { it.size == int }!!, null)
+                }.toTypedArray()
+
         val items = (buf.readCompoundTag()?.get("items") as ListTag)
                 .mapNotNull { (it as CompoundTag).deserializeInnerStack() }
-        val tabs: Map<Level, Boolean> = Level.values().map {
-            Pair(buf.readEnumConstant(Level::class.java), buf.readBoolean())
-        }.toMap()
+
+//        val tabs: Map<Level, Boolean> = Level.values().map {
+//            Pair(buf.readEnumConstant(Level::class.java), buf.readBoolean())
+//        }.toMap()
 
         allLimbs.forEachIndexed {
             index, limb -> limb.depositStack(items[index])
         }
 
-        tabs.forEach {
-            selectedTabs[it.key] = it.value
-        }
+//        tabs.forEach {
+//            selectedTabs[it.key] = it.value
+//        }
     }
+
+    private var allLimbs: Array<LimbInventory> = emptyArray()
+    get() = owner?.limbs?.map(LimbBlockEntity::inventory)?.toTypedArray() ?: field
 
     val selectedTabs: HashMap<Level, Boolean> = hashMapOf(
             Pair(Level.LOW, true),
@@ -138,7 +143,7 @@ class MessScreenHandler(
         }
 
         slot.markDirty()
-        updateInfo(this.searchString, this.scrollPosition)
+        updateInfo()
 
         return slotStack
     }
@@ -166,11 +171,11 @@ class MessScreenHandler(
             return super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, playerEntity)
         }
 
-        updateInfo(this.searchString, this.scrollPosition)
+        updateInfo()
         return ItemStack.EMPTY
     }
 
-    fun updateInfo(searchString: String, scrollPosition: Float) {
+    fun updateInfo(searchString: String = this.searchString, scrollPosition: Float = this.scrollPosition) {
         this.searchString = searchString
         this.scrollPosition = scrollPosition
 
@@ -183,6 +188,11 @@ class MessScreenHandler(
         if(playerInventory.player.world.isClient) {
             createNewSlots()
         }
+    }
+
+    fun updateClientLimbs(limbs: Array<LimbInventory>) {
+        allLimbs = limbs
+        updateInfo()
     }
 
     fun toggleTab(selectedTabLevel: Level) {

@@ -46,7 +46,7 @@ open class LimbBlock(settings: FabricBlockSettings, private val level: Level): B
             withdraw(player, world, blockEntity)
         else
             deposit(handStack, player, hand, blockEntity)
-
+        
         return ActionResult.SUCCESS
     }
 
