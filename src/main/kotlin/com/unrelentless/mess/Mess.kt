@@ -12,16 +12,11 @@ import com.unrelentless.mess.client.gui.screen.MessScreenHandler
 import com.unrelentless.mess.item.EnderLinkItem
 import com.unrelentless.mess.util.Clientside
 import com.unrelentless.mess.util.Level
-import com.unrelentless.mess.util.LimbInventory
-import com.unrelentless.mess.util.deserializeInnerStack
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.api.ModInitializer
-import net.fabricmc.fabric.api.network.ClientSidePacketRegistry
 import net.fabricmc.fabric.api.network.ServerSidePacketRegistry
 import net.minecraft.block.Block
 import net.minecraft.item.Item
-import net.minecraft.nbt.CompoundTag
-import net.minecraft.nbt.ListTag
 import net.minecraft.util.Identifier
 
 class Mess : ModInitializer, ClientModInitializer {
@@ -29,7 +24,6 @@ class Mess : ModInitializer, ClientModInitializer {
     companion object {
         const val IDENTIFIER = "mess"
         val C2S_IDENTIFIER = Identifier(IDENTIFIER, "sync_server")
-        val S2C_IDENTIFIER = Identifier(IDENTIFIER, "sync_client")
 
         val BLOCKS: List<Block> = listOf(
                 LowLimbBlock.BLOCK,
@@ -76,33 +70,13 @@ class Mess : ModInitializer, ClientModInitializer {
                 }
             }
         }
-
     }
 
     override fun onInitializeClient() {
         listOf(BLOCKS, ITEMS, ENTITIES, SCREENS)
                 .flatten()
                 .filterIsInstance<Clientside>()
-                .forEach(Clientside::renderOnClient)
-
-        ClientSidePacketRegistry.INSTANCE.register(S2C_IDENTIFIER) { context, buf ->
-            val inventories = buf.readIntArray().map { int ->
-                LimbInventory(Level.values().find { it.size == int }!!, null)
-            }.toTypedArray()
-
-            (buf.readCompoundTag()?.get("items") as ListTag)
-                    .mapNotNull { (it as CompoundTag).deserializeInnerStack() }
-                    .forEachIndexed { index, item ->
-                        inventories[index].depositStack(item)
-                    }
-
-            context.taskQueue.execute {
-                (context.player.currentScreenHandler as? MessScreenHandler).let { handler ->
-                    handler?.updateClientLimbs(inventories)
-                }
-            }
-
-        }
+                .forEach{it.renderOnClient()}
     }
 }
 

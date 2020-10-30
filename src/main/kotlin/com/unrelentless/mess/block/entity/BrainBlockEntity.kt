@@ -3,10 +3,10 @@ package com.unrelentless.mess.block.entity
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.block.BrainBlock
 import com.unrelentless.mess.client.gui.screen.MessScreenHandler
-import com.unrelentless.mess.util.*
-import io.netty.buffer.Unpooled
-import net.fabricmc.fabric.api.network.ClientSidePacketRegistry
-import net.fabricmc.fabric.api.network.ServerSidePacketRegistry
+import com.unrelentless.mess.util.Level
+import com.unrelentless.mess.util.registerBlockEntity
+import com.unrelentless.mess.util.serializeInnerStackToTag
+import com.unrelentless.mess.util.setChunkLoaded
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory
 import net.minecraft.block.BlockState
 import net.minecraft.block.entity.BlockEntity
@@ -36,7 +36,7 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
                     .build(null)
         }
 
-        fun findLimbs(
+        private fun findLimbs(
                 world: World?,
                 pos: BlockPos,
                 ignoringPos: BlockPos? = null,
@@ -56,15 +56,13 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
         }
     }
 
-    private val syncManager = BrainSyncManager(this)
     private val selectedTabs: HashMap<Level, Boolean> = hashMapOf(
             Pair(Level.LOW, true),
             Pair(Level.MID, true),
             Pair(Level.HIGH, true)
     )
 
-    var limbs: Array<LimbBlockEntity>? = null
-        private set
+    private var limbs: Array<LimbBlockEntity>? = null
         get() = field?.sortedBy{it.inventory.isEmpty}?.toTypedArray()
 
     override fun createMenu(
@@ -74,12 +72,20 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     ): ScreenHandler? = MessScreenHandler(
             syncId,
             playerInventory,
+            limbs?.map(LimbBlockEntity::inventory)?.toTypedArray() ?: emptyArray(),
             this
     )
 
     override fun getDisplayName(): Text = TranslatableText("container." + Mess.IDENTIFIER + ".mess")
     override fun writeScreenOpeningData(serverPlayerEntity: ServerPlayerEntity?, packetByteBuf: PacketByteBuf?) {
-        writeToBuffer(packetByteBuf)
+        val sizes = limbs?.map{it.level.size}?.toIntArray()
+        val compoundTag = CompoundTag()
+        val listTag = ListTag()
+        limbs?.map { it.inventory.getStack().serializeInnerStackToTag() }?.forEach{listTag.add(it)}
+        compoundTag.put("items", listTag)
+
+        packetByteBuf?.writeIntArray(sizes)
+        packetByteBuf?.writeCompoundTag(compoundTag)
 
         selectedTabs.forEach {
             packetByteBuf?.writeEnumConstant(it.key)
@@ -111,12 +117,11 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
         return tag
     }
 
-    fun onPlaced() = syncManager.brainPlaced()
-    fun onBroken() = syncManager.brainBroken()
+    fun onPlaced() = findLimbs(world as World, pos).forEach{it.addBrain(this)}
+    fun onBroken() = findLimbs(world as World, pos).forEach{it.removeBrain(this)}
     fun updateBrains() = limbs?.forEach(LimbBlockEntity::findBrains)
     fun updateLimbs(ignoringPos: BlockPos? = null) {
         limbs = findLimbs(world, pos, ignoringPos).toTypedArray()
-        syncToClient()
     }
 
     fun updateTabs(selectedTabs:  HashMap<Level, Boolean>) {
@@ -129,27 +134,5 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     fun chunkLoad(chunkLoad: Boolean) {
         setChunkLoaded(chunkLoad)
         limbs?.forEach{it.setChunkLoaded(chunkLoad)}
-    }
-
-    private fun syncToClient() {
-        if(world?.isClient == true) return
-
-        val buffer = PacketByteBuf(Unpooled.buffer())
-        writeToBuffer(buffer)
-
-        world?.players?.filter { it.currentScreenHandler is MessScreenHandler }?.forEach {
-            ServerSidePacketRegistry.INSTANCE.sendToPlayer(it, Mess.S2C_IDENTIFIER, buffer)
-        }
-    }
-
-    private fun writeToBuffer(buf: PacketByteBuf?) {
-        val sizes = limbs?.map{it.level.size}?.toIntArray()
-        val compoundTag = CompoundTag()
-        val listTag = ListTag()
-        limbs?.map { it.inventory.getStack().serializeInnerStackToTag() }?.forEach{listTag.add(it)}
-        compoundTag.put("items", listTag)
-
-        buf?.writeIntArray(sizes)
-        buf?.writeCompoundTag(compoundTag)
     }
 }
