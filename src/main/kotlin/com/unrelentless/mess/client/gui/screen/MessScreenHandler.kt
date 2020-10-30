@@ -1,7 +1,6 @@
 package com.unrelentless.mess.client.gui.screen
 
 import com.unrelentless.mess.Mess
-import com.unrelentless.mess.block.BrainBlock
 import com.unrelentless.mess.block.entity.BrainBlockEntity
 import com.unrelentless.mess.block.entity.LimbBlockEntity
 import com.unrelentless.mess.util.Level
@@ -10,10 +9,8 @@ import com.unrelentless.mess.util.LimbSlot
 import com.unrelentless.mess.util.deserializeInnerStack
 import io.netty.buffer.Unpooled
 import net.fabricmc.fabric.api.network.ClientSidePacketRegistry
-import net.fabricmc.fabric.api.network.ServerSidePacketRegistry
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
 import net.minecraft.block.BlockState
-import net.minecraft.client.item.TooltipContext
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.item.ItemStack
@@ -24,7 +21,6 @@ import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.ScreenHandlerType
 import net.minecraft.screen.slot.Slot
 import net.minecraft.screen.slot.SlotActionType
-import net.minecraft.util.Formatting
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.World
@@ -43,8 +39,6 @@ class MessScreenHandler(
 
         fun openScreen(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity) {
             state.createScreenHandlerFactory(world, pos).let {
-                val blockEntity = world.getBlockEntity(pos) as? BrainBlockEntity
-                blockEntity?.updateLimbs()
                 player.openHandledScreen(it)
             }
         }
@@ -54,9 +48,11 @@ class MessScreenHandler(
             syncId,
             playerInventory
     ) {
-        allLimbs = buf.readIntArray().map { int ->
-                    LimbInventory(Level.values().find { it.size == int }!!, null)
-                }.toTypedArray()
+        val inventories = buf.readIntArray().map { int ->
+            LimbInventory(Level.values().find { it.size == int }!!, null)
+        }
+
+        allLimbs.addAll(inventories)
 
         val items = (buf.readCompoundTag()?.get("items") as ListTag)
                 .mapNotNull { (it as CompoundTag).deserializeInnerStack() }
@@ -74,24 +70,22 @@ class MessScreenHandler(
 //        }
     }
 
-    private var allLimbs: Array<LimbInventory> = emptyArray()
-    get() = owner?.limbs?.map(LimbBlockEntity::inventory)?.toTypedArray() ?: field
-
     val selectedTabs: HashMap<Level, Boolean> = hashMapOf(
             Pair(Level.LOW, true),
             Pair(Level.MID, true),
             Pair(Level.HIGH, true)
     )
 
+    private val allLimbs: MutableList<LimbInventory> = mutableListOf()
+        get() = owner?.limbs?.map(LimbBlockEntity::inventory)?.toMutableList() ?: field
+
+    val limbs: MutableList<LimbInventory> = mutableListOf()
+    val limbsToDisplay: MutableList<LimbInventory> = mutableListOf()
+
     private var scrollPosition = 0.0f
     private var searchString = ""
     private var scrolledRows: Int = 0
-    private var tabbedLimbs: Array<LimbInventory> = emptyArray()
-
-    var limbs: Array<LimbInventory> = emptyArray()
-        private set
-    var limbsToDisplay: Array<LimbInventory> = emptyArray()
-        private set
+    private val tabbedLimbs: MutableList<LimbInventory> = mutableListOf()
 
     override fun canUse(player: PlayerEntity?): Boolean = true
     override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity): ItemStack {
@@ -143,21 +137,22 @@ class MessScreenHandler(
         }
 
         slot.markDirty()
+        owner?.contentChanged(player)
         updateInfo()
 
         return slotStack
     }
 
-    private fun pickup(index: Int, mouseButton: Int, playerEntity: PlayerEntity): ItemStack {
+    private fun pickup(index: Int, mouseButton: Int, player: PlayerEntity): ItemStack {
         if (index == -999) {
             val count = if(mouseButton == 0) playerInventory.cursorStack.count else 1
-            playerEntity.dropItem(playerInventory.cursorStack.split(count), true)
+            player.dropItem(playerInventory.cursorStack.split(count), true)
             return ItemStack.EMPTY
         }
 
         val slot = slots[index]
         val slotStack = slot.stack
-        val cursorStack = playerEntity.inventory.cursorStack
+        val cursorStack = player.inventory.cursorStack
 
         if(index < limbsToDisplay.size) {
             if(!cursorStack.isEmpty) {
@@ -165,17 +160,20 @@ class MessScreenHandler(
                 ((slot.inventory) as LimbInventory).depositStack(cursorStack, count)
             } else {
                 val count = min(slotStack.item.maxCount, slotStack.count) / (mouseButton + 1)
-                playerEntity.inventory.cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
+                player.inventory.cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
             }
         } else {
-            return super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, playerEntity)
+            return super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, player)
         }
 
+        slot.markDirty()
+        owner?.contentChanged(player)
         updateInfo()
+
         return ItemStack.EMPTY
     }
 
-    fun updateInfo(searchString: String = this.searchString, scrollPosition: Float = this.scrollPosition) {
+    fun updateInfo(syncToServer: Boolean = true, searchString: String = this.searchString, scrollPosition: Float = this.scrollPosition) {
         this.searchString = searchString
         this.scrollPosition = scrollPosition
 
@@ -183,16 +181,15 @@ class MessScreenHandler(
         updateTabbedLimbs()
         updateLimbs()
         updateLimbsToDisplay()
-        syncToServer()
 
-        if(playerInventory.player.world.isClient) {
-            createNewSlots()
-        }
+        if(syncToServer) syncToServer()
+        if(playerInventory.player.world.isClient) createNewSlots()
     }
 
-    fun updateClientLimbs(limbs: Array<LimbInventory>) {
-        allLimbs = limbs
-        updateInfo()
+    fun updateClientLimbs(limbs: List<LimbInventory>) {
+        allLimbs.clear()
+        allLimbs.addAll(limbs)
+        updateInfo(false)
     }
 
     fun toggleTab(selectedTabLevel: Level) {
@@ -205,49 +202,50 @@ class MessScreenHandler(
     }
 
     private fun updateTabbedLimbs() {
-        tabbedLimbs = allLimbs.sortedBy(LimbInventory::isEmpty).filter {
+        tabbedLimbs.clear()
+        tabbedLimbs.addAll(allLimbs.sortedBy{it.isEmpty}.filter {
             selectedTabs[it.level] == true
-        }.toTypedArray()
+        })
     }
 
     private fun updateLimbs() {
-        limbs = tabbedLimbs.filter { limb ->
+        limbs.clear()
+        limbs.addAll(tabbedLimbs.filter { limb ->
             //TODO: Find a way to do this on the server
 //            val toolTip = limb.getStack().getTooltip(null, TooltipContext.Default.NORMAL)
 //                    .map { Formatting.strip(it.string)?.trim()?.toLowerCase() }
 //                    .first { !it.isNullOrEmpty() }
 
-            limb.getStack().item.toString().contains(searchString) ?: false
-        }.toTypedArray()
+            limb.getStack().item.toString().contains(searchString)
+        })
     }
 
     private fun updateLimbsToDisplay() {
-        limbsToDisplay =  limbs.filterIndexed { index, _ ->
+        limbsToDisplay.clear()
+        limbsToDisplay.addAll(limbs.filterIndexed { index, _ ->
             val min = scrolledRows * MessScreen.COLUMNS
             val max = min(limbs.size, MessScreen.INV_SIZE + min)
             (min until max).contains(index)
-        }.toTypedArray()
+        })
     }
 
-    private fun createNewSlots() {
+    fun createNewSlots() {
         slots.clear()
-
-        val limbs = limbsToDisplay
 
         // Magic numbers
         val xOffset = 9
         val yOffsetInv = 18
         val yOffsetPlayerInv = 121
         val yOffsetPlayerHotbar = 179
-        val rowTotal = min(1 + limbs.size / MessScreen.COLUMNS, MessScreen.ROWS)
+        val rowTotal = min(1 + limbsToDisplay.size / MessScreen.COLUMNS, MessScreen.ROWS)
 
         // MESS inv
         for (row in 0 until rowTotal) {
-            val columnMax = min(limbs.size - MessScreen.COLUMNS * row, MessScreen.COLUMNS)
+            val columnMax = min(limbsToDisplay.size - MessScreen.COLUMNS * row, MessScreen.COLUMNS)
 
             for (column in 0 until columnMax) {
                 val index = column + row * MessScreen.COLUMNS
-                addSlot(LimbSlot(limbs[index], index, xOffset + column * 18, yOffsetInv + row * 18))
+                addSlot(LimbSlot(limbsToDisplay[index], index, xOffset + column * 18, yOffsetInv + row * 18))
             }
         }
 

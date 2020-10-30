@@ -50,11 +50,10 @@ class LimbInventory(val level: Level, private val owner: BlockEntity?): SidedInv
     }
 
     override fun markDirty() {
-        if (owner == null) return
+        if (owner == null || owner.world?.isClient == true) return
 
         owner.markDirty()
-        require(owner is BlockEntityClientSerializable)
-        if (owner.world?.isClient == false) owner.sync()
+        (owner as? BlockEntityClientSerializable)?.sync()
     }
 
     fun depositStack(stack: ItemStack): ItemStack {

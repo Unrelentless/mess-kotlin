@@ -36,6 +36,9 @@ class BrainBlock: BlockWithEntity(brainBlockSettings) {
 
     override fun onUse(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity, hand: Hand, hit: BlockHitResult): ActionResult {
         if(!(player.isSneaking && player.mainHandStack.item == EnderLinkItem.ITEM)) {
+            val blockEntity = world.getBlockEntity(pos) as? BrainBlockEntity
+            blockEntity?.updateLimbs()
+            blockEntity?.updateBrains()
             MessScreenHandler.openScreen(state, world, pos, player)
         }
 

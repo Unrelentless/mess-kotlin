@@ -2,8 +2,6 @@ package com.unrelentless.mess.client.gui.screen
 
 import com.mojang.blaze3d.systems.RenderSystem
 import com.unrelentless.mess.Mess
-import com.unrelentless.mess.block.BrainBlock
-import com.unrelentless.mess.block.entity.BrainBlockEntity
 import com.unrelentless.mess.client.render.item.MessScreenItemRenderer
 import com.unrelentless.mess.mixin.MinecraftClientMixin
 import com.unrelentless.mess.util.Clientside
@@ -14,15 +12,12 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen
 import net.minecraft.client.gui.widget.TextFieldWidget
 import net.minecraft.client.util.InputUtil
 import net.minecraft.client.util.math.MatrixStack
-import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.text.Text
 import net.minecraft.text.TranslatableText
 import net.minecraft.util.Identifier
-import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.MathHelper.clamp
-import net.minecraft.world.World
 import java.lang.Integer.min
 
 
@@ -316,8 +311,7 @@ class MessScreen(
     }
 
     private fun updateHandler() {
-        val searchBox = this.searchBox as TextFieldWidget
-        handler.updateInfo(searchBox.text, scrollPosition)
+        handler.updateInfo(true, searchBox!!.text, scrollPosition)
     }
 }
 

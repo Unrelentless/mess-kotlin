@@ -57,11 +57,11 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
             return list
         }
 
-        private fun writeLimbsToBuffer(limbs : Array<LimbBlockEntity>?, buf: PacketByteBuf?) {
-            val sizes = limbs?.map{it.level.size}?.toIntArray()
+        private fun writeLimbsToBuffer(limbs : MutableList<LimbBlockEntity>, buf: PacketByteBuf?) {
+            val sizes = limbs.map{it.level.size}.toIntArray()
             val compoundTag = CompoundTag()
             val listTag = ListTag()
-            limbs?.map { it.inventory.getStack().serializeInnerStackToTag() }?.forEach{listTag.add(it)}
+            limbs.map { it.inventory.getStack().serializeInnerStackToTag() }.forEach{listTag.add(it)}
             compoundTag.put("items", listTag)
 
             buf?.writeIntArray(sizes)
@@ -80,17 +80,13 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
             Pair(Level.HIGH, true)
     )
 
-    var limbs: Array<LimbBlockEntity>? = null
-        private set
-        get() = field?.sortedBy{it.inventory.isEmpty}?.toTypedArray()
+    val limbs: MutableList<LimbBlockEntity> = mutableListOf()
 
     override fun createMenu(
             syncId: Int,
             playerInventory: PlayerInventory,
             player: PlayerEntity
     ): ScreenHandler? {
-        updateBrains()
-        updateLimbs()
         return MessScreenHandler(
                 syncId,
                 playerInventory,
@@ -129,9 +125,10 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
 
     fun onPlaced() = findLimbs(world as World, pos).forEach{it.addBrain(this)}
     fun onBroken() = findLimbs(world as World, pos).forEach{it.removeBrain(this)}
-    fun updateBrains() = limbs?.forEach(LimbBlockEntity::findBrains)
+    fun updateBrains() = limbs.forEach(LimbBlockEntity::findBrains)
     fun updateLimbs(ignoringPos: BlockPos? = null) {
-        limbs = findLimbs(world, pos, ignoringPos).toTypedArray()
+        limbs.clear()
+        limbs.addAll(findLimbs(world, pos, ignoringPos))
     }
 
     fun contentChanged(player: PlayerEntity? = null) {
@@ -145,15 +142,15 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
                 }
     }
 
-    fun updateTabs(selectedTabs:  HashMap<Level, Boolean>) {
-        selectedTabs.forEach{
-            this.selectedTabs[it.key] = it.value
-        }
-        markDirty()
-    }
+//    fun updateTabs(selectedTabs:  HashMap<Level, Boolean>) {
+//        selectedTabs.forEach{
+//            this.selectedTabs[it.key] = it.value
+//        }
+//        markDirty()
+//    }
 
     fun chunkLoad(chunkLoad: Boolean) {
         setChunkLoaded(chunkLoad)
-        limbs?.forEach{it.setChunkLoaded(chunkLoad)}
+        limbs.forEach{it.setChunkLoaded(chunkLoad)}
     }
 }

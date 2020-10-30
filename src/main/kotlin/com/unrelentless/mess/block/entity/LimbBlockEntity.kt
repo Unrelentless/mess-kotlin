@@ -52,19 +52,19 @@ open class LimbBlockEntity(
     override fun sync() {
         super.sync()
         markDirty()
-        linkedBrains.forEach(BrainBlockEntity::contentChanged)
+//        linkedBrains.forEach(BrainBlockEntity::contentChanged)
     }
 
     fun onPlaced() {
         findBrains()
         linkedBrains.forEach(BrainBlockEntity::updateLimbs)
-        sync()
+        linkedBrains.forEach(BrainBlockEntity::contentChanged)
     }
 
     fun onBroken(fromPos: BlockPos) {
         linkedBrains.forEach { it.updateLimbs(fromPos) }
         linkedBrains.forEach(BrainBlockEntity::updateBrains)
-        sync()
+        linkedBrains.forEach(BrainBlockEntity::contentChanged)
     }
 
     fun addBrain(brainBlockEntity: BrainBlockEntity) {

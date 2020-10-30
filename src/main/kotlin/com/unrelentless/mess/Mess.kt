@@ -71,8 +71,9 @@ class Mess : ModInitializer, ClientModInitializer {
                     for(tab in tabs) {
                         it?.selectedTabs?.set(tab.key, tab.value)
                     }
-                    it?.updateInfo(searchString, scrollPosition)
-                    it?.owner?.updateTabs(it.selectedTabs)
+                    it?.updateInfo(false, searchString, scrollPosition)
+                    it?.createNewSlots()
+//                    it?.owner?.updateTabs(it.selectedTabs)
                 }
             }
         }
@@ -87,7 +88,7 @@ class Mess : ModInitializer, ClientModInitializer {
         ClientSidePacketRegistry.INSTANCE.register(S2C_IDENTIFIER) { context, buf ->
             val inventories = buf.readIntArray().map { int ->
                 LimbInventory(Level.values().find { it.size == int }!!, null)
-            }.toTypedArray()
+            }
 
             (buf.readCompoundTag()?.get("items") as ListTag)
                     .mapNotNull { (it as CompoundTag).deserializeInnerStack() }
