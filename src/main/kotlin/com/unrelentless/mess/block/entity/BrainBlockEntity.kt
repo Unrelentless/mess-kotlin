@@ -137,7 +137,7 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     fun contentChanged(player: PlayerEntity? = null) {
         world?.players
                 ?.filter { it != player }
-                ?.filter { it.currentScreenHandler is MessScreenHandler }
+                ?.filter { (it.currentScreenHandler as? MessScreenHandler)?.owner?.pos == pos }
                 ?.forEach {
                     val buf = PacketByteBuf(Unpooled.buffer())
                     writeLimbsToBuffer(limbs, buf)

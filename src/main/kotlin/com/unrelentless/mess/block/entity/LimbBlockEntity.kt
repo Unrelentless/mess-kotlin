@@ -56,37 +56,27 @@ open class LimbBlockEntity(
     }
 
     fun onPlaced() {
-        if(world?.isClient == true) return
-
         findBrains()
         linkedBrains.forEach(BrainBlockEntity::updateLimbs)
-        linkedBrains.forEach(BrainBlockEntity::contentChanged)
+        sync()
     }
 
     fun onBroken(fromPos: BlockPos) {
-        if(world?.isClient == true) return
-
         linkedBrains.forEach { it.updateLimbs(fromPos) }
         linkedBrains.forEach(BrainBlockEntity::updateBrains)
-        linkedBrains.forEach(BrainBlockEntity::contentChanged)
+        sync()
     }
 
     fun addBrain(brainBlockEntity: BrainBlockEntity) {
-        if(world?.isClient == true) return
-
         linkedBrains.add(brainBlockEntity)
     }
 
     fun removeBrain(brainBlockEntity: BrainBlockEntity) {
-        if(world?.isClient == true) return
-
         linkedBrains.remove(brainBlockEntity)
         if(linkedBrains.isEmpty()) setChunkLoaded(false)
     }
 
     fun findBrains() {
-        if(world?.isClient == true) return
-
         linkedBrains.clear()
         linkedBrains.addAll(findLimbsAndBrains(world as World, pos).second)
     }

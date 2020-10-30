@@ -212,6 +212,7 @@ class MessScreenHandler(
 
     private fun updateLimbs() {
         limbs = tabbedLimbs.filter { limb ->
+            //TODO: Find a way to do this on the server
 //            val toolTip = limb.getStack().getTooltip(null, TooltipContext.Default.NORMAL)
 //                    .map { Formatting.strip(it.string)?.trim()?.toLowerCase() }
 //                    .first { !it.isNullOrEmpty() }
