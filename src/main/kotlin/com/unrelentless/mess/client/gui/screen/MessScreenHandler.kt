@@ -177,7 +177,6 @@ class MessScreenHandler(
         this.searchString = searchString
         this.scrollPosition = scrollPosition
 
-        calculateScrolledRows()
         updateTabbedLimbs()
         updateLimbs()
         updateLimbsToDisplay()
@@ -221,6 +220,8 @@ class MessScreenHandler(
     }
 
     private fun updateLimbsToDisplay() {
+        calculateScrolledRows()
+
         limbsToDisplay.clear()
         limbsToDisplay.addAll(limbs.filterIndexed { index, _ ->
             val min = scrolledRows * MessScreen.COLUMNS

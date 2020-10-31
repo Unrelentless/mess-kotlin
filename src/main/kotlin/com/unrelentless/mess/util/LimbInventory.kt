@@ -53,7 +53,7 @@ class LimbInventory(val level: Level, private val owner: BlockEntity?): SidedInv
         if (owner == null || owner.world?.isClient == true) return
 
         owner.markDirty()
-        (owner as? BlockEntityClientSerializable)?.sync()
+        if(owner?.world?.isClient == false) (owner as? BlockEntityClientSerializable)?.sync()
     }
 
     fun depositStack(stack: ItemStack): ItemStack {
