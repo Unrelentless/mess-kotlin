@@ -41,6 +41,14 @@ class MessScreen(
 
     private var scrolling = false
     private var scrollPosition = 0.0f
+    private var scrolledRows = 0
+        set(newValue) {
+            if(newValue != field)
+            {
+                updateHandler()
+            }
+            field = newValue
+        }
     private var ignoreTypedCharacter = false
     private var searchBox: TextFieldWidget? = null
 
@@ -81,6 +89,9 @@ class MessScreen(
         searchBox?.setSelected(true)
 
         children.add(searchBox)
+        searchBox?.text = handler.searchString
+        scrollPosition = handler.scrollPosition
+
         updateHandler()
     }
 
@@ -147,7 +158,7 @@ class MessScreen(
         if (!this.hasScrollbar())
             return false
 
-        val numberOfPositions = (this.handler.limbs.size + COLUMNS - 1) / COLUMNS - ROWS
+        val numberOfPositions = (handler.limbs.size + COLUMNS - 1) / COLUMNS - ROWS
         scrollPosition = clamp((scrollPosition - amount / numberOfPositions).toFloat(), 0.0f, 1.0f)
 
         updateHandler()
@@ -164,7 +175,8 @@ class MessScreen(
         val absoluteScrollPosition = ((mouseY - scrollbarStartY - 7.5f) / ((scrollbarEndY - scrollbarStartY).toFloat() - 42.0f)).toFloat()
         scrollPosition = clamp(absoluteScrollPosition, 0.0f, 1.0f)
 
-        updateHandler()
+        val numberOfPositions = (handler.limbs.size + COLUMNS - 1) / COLUMNS - ROWS
+        scrolledRows = (numberOfPositions * scrollPosition + 0.5).toInt()
 
         return true
     }

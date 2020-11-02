@@ -39,6 +39,13 @@ class MessScreenHandler(
 
         fun openScreen(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity) {
             state.createScreenHandlerFactory(world, pos).let {
+                // Hack to clear search strings and scroll position when new screen
+                if(player.currentScreenHandler !is MessScreenHandler) {
+                    val blockEntity = world.getBlockEntity(pos) as? BrainBlockEntity ?: return
+                    blockEntity.updateScrollPosition(0.0f, player)
+                    blockEntity.updateSearchString("", player)
+                }
+
                 player.openHandledScreen(it)
             }
         }
@@ -57,17 +64,18 @@ class MessScreenHandler(
         val items = (buf.readCompoundTag()?.get("items") as ListTag)
                 .mapNotNull { (it as CompoundTag).deserializeInnerStack() }
 
-//        val tabs: Map<Level, Boolean> = Level.values().map {
-//            Pair(buf.readEnumConstant(Level::class.java), buf.readBoolean())
-//        }.toMap()
-
         allLimbs.forEachIndexed {
             index, limb -> limb.depositStack(items[index])
         }
 
-//        tabs.forEach {
-//            selectedTabs[it.key] = it.value
-//        }
+        if(buf.readBoolean()) {
+            Level.values().map {
+                selectedTabs[buf.readEnumConstant(Level::class.java)] = buf.readBoolean()
+            }
+        }
+
+        scrollPosition = buf.readFloat()
+        searchString = buf.readString()
     }
 
     val selectedTabs: HashMap<Level, Boolean> = hashMapOf(
@@ -79,17 +87,47 @@ class MessScreenHandler(
     private val allLimbs: MutableList<LimbInventory> = mutableListOf()
         get() = owner?.limbs?.map(LimbBlockEntity::inventory)?.toMutableList() ?: field
 
-    val limbs: MutableList<LimbInventory> = mutableListOf()
-    val limbsToDisplay: MutableList<LimbInventory> = mutableListOf()
+    private val tabbedLimbs: List<LimbInventory>
+        get() = allLimbs.filter { selectedTabs[it.level] == true }
 
-    private var scrollPosition = 0.0f
-    private var searchString = ""
-    private var scrolledRows: Int = 0
-    private val tabbedLimbs: MutableList<LimbInventory> = mutableListOf()
+    val limbs: List<LimbInventory>
+        get() = tabbedLimbs.filter { limb ->
+            //TODO: Find a way to do this on the server
+//            val toolTip = limb.getStack().getTooltip(null, TooltipContext.Default.NORMAL)
+//                    .map { Formatting.strip(it.string)?.trim()?.toLowerCase() }
+//                    .first { !it.isNullOrEmpty() }
+
+            limb.getStack().item.toString().contains(searchString)
+        }
+
+    val limbsToDisplay: List<LimbInventory>
+        get() = limbs
+                .sortedBy { it.isEmpty }
+                .filterIndexed { index, _ ->
+                    val min = scrolledRows * MessScreen.COLUMNS
+                    val max = min(limbs.size, MessScreen.INV_SIZE + min)
+                    (min until max).contains(index)
+                }
+
+    var scrollPosition = 0.0f
+        private set
+
+    var searchString = ""
+        private set
+
+    private val scrolledRows: Int
+        get() {
+            val numberOfPositions = (limbs.size + MessScreen.COLUMNS - 1) / MessScreen.COLUMNS - MessScreen.ROWS
+            return (numberOfPositions * scrollPosition + 0.5).toInt()
+        }
 
     override fun canUse(player: PlayerEntity?): Boolean = true
     override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity): ItemStack {
-        if(!playerEntity.world.isClient) createNewSlots()
+        if(!playerEntity.world.isClient) {
+            syncToServer()
+            createNewSlots()
+        }
+
         if(index == -1) return ItemStack.EMPTY
 
         when(actionType) {
@@ -103,11 +141,9 @@ class MessScreenHandler(
     }
 
     override fun transferSlot(player: PlayerEntity, index: Int): ItemStack {
-        val slot = this.slots[index]
-        val limbs = limbsToDisplay
+        val slot = slots[index]
 
         if(!slot.hasStack()) return ItemStack.EMPTY
-
         val slotStack = slot.stack
 
         // Slot clicked in MESS inventory
@@ -116,7 +152,7 @@ class MessScreenHandler(
             val itemStackCopy = slotStack.copy()
             itemStackCopy.count = count
 
-            if(!insertItem(itemStackCopy, limbs.size, this.slots.size, true))
+            if(!insertItem(itemStackCopy, limbsToDisplay.size, this.slots.size, true))
                 return ItemStack.EMPTY
 
             slotStack.decrement(count)
@@ -137,8 +173,8 @@ class MessScreenHandler(
         }
 
         slot.markDirty()
+        if(playerInventory.player.world.isClient) createNewSlots()
         owner?.contentChanged(player)
-        updateInfo()
 
         return slotStack
     }
@@ -167,19 +203,19 @@ class MessScreenHandler(
         }
 
         slot.markDirty()
+        if(playerInventory.player.world.isClient) createNewSlots()
         owner?.contentChanged(player)
-        updateInfo()
 
         return ItemStack.EMPTY
     }
 
-    fun updateInfo(syncToServer: Boolean = true, searchString: String = this.searchString, scrollPosition: Float = this.scrollPosition) {
+    fun updateInfo(
+            syncToServer: Boolean = true,
+            searchString: String = this.searchString,
+            scrollPosition: Float = this.scrollPosition
+    ) {
         this.searchString = searchString
         this.scrollPosition = scrollPosition
-
-        updateTabbedLimbs()
-        updateLimbs()
-        updateLimbsToDisplay()
 
         if(syncToServer) syncToServer()
         if(playerInventory.player.world.isClient) createNewSlots()
@@ -188,49 +224,14 @@ class MessScreenHandler(
     fun updateClientLimbs(limbs: List<LimbInventory>) {
         allLimbs.clear()
         allLimbs.addAll(limbs)
-        updateInfo(false)
+        createNewSlots()
     }
 
     fun toggleTab(selectedTabLevel: Level) {
-        this.selectedTabs[selectedTabLevel] = !this.selectedTabs[selectedTabLevel]!!
+        selectedTabs[selectedTabLevel] = !selectedTabs[selectedTabLevel]!!
     }
 
-    private fun calculateScrolledRows() {
-        val numberOfPositions = (this.limbs.size + MessScreen.COLUMNS - 1) / MessScreen.COLUMNS - MessScreen.ROWS
-        scrolledRows = (numberOfPositions * scrollPosition + 0.5).toInt()
-    }
-
-    private fun updateTabbedLimbs() {
-        tabbedLimbs.clear()
-        tabbedLimbs.addAll(allLimbs.sortedBy{it.isEmpty}.filter {
-            selectedTabs[it.level] == true
-        })
-    }
-
-    private fun updateLimbs() {
-        limbs.clear()
-        limbs.addAll(tabbedLimbs.filter { limb ->
-            //TODO: Find a way to do this on the server
-//            val toolTip = limb.getStack().getTooltip(null, TooltipContext.Default.NORMAL)
-//                    .map { Formatting.strip(it.string)?.trim()?.toLowerCase() }
-//                    .first { !it.isNullOrEmpty() }
-
-            limb.getStack().item.toString().contains(searchString)
-        })
-    }
-
-    private fun updateLimbsToDisplay() {
-        calculateScrolledRows()
-
-        limbsToDisplay.clear()
-        limbsToDisplay.addAll(limbs.filterIndexed { index, _ ->
-            val min = scrolledRows * MessScreen.COLUMNS
-            val max = min(limbs.size, MessScreen.INV_SIZE + min)
-            (min until max).contains(index)
-        })
-    }
-
-    fun createNewSlots() {
+    private fun createNewSlots() {
         slots.clear()
 
         // Magic numbers

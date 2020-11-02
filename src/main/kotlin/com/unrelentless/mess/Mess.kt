@@ -65,15 +65,15 @@ class Mess : ModInitializer, ClientModInitializer {
                 Pair(buffer.readEnumConstant(Level::class.java), buffer.readBoolean())
             }.toMap()
 
-
             context.taskQueue.execute {
                 (context.player.currentScreenHandler as? MessScreenHandler).let {
                     for(tab in tabs) {
                         it?.selectedTabs?.set(tab.key, tab.value)
                     }
                     it?.updateInfo(false, searchString, scrollPosition)
-                    it?.createNewSlots()
-//                    it?.owner?.updateTabs(it.selectedTabs)
+                    it?.owner?.updateTabs(it.selectedTabs, context.player)
+                    it?.owner?.updateSearchString(it.searchString, context.player)
+                    it?.owner?.updateScrollPosition(it.scrollPosition, context.player)
                 }
             }
         }
@@ -101,7 +101,6 @@ class Mess : ModInitializer, ClientModInitializer {
                     handler?.updateClientLimbs(inventories)
                 }
             }
-
         }
     }
 }

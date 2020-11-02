@@ -116,9 +116,12 @@ open class LimbBlock(settings: FabricBlockSettings, private val level: Level): B
             player.inventory.offerOrDrop(world, blockEntity.inventory.removeStack(0, 1))
         else
             player.inventory.offerOrDrop(world, blockEntity.inventory.removeStack(0))
+
+        blockEntity.onContentChanged(player)
     }
 
     private fun deposit(stack: ItemStack, player: PlayerEntity, hand: Hand, blockEntity: LimbBlockEntity) {
         player.setStackInHand(hand, blockEntity.inventory.depositStack(stack))
+        blockEntity.onContentChanged(player)
     }
 }

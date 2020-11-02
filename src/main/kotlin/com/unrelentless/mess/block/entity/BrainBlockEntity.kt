@@ -7,8 +7,6 @@ import com.unrelentless.mess.util.Level
 import com.unrelentless.mess.util.registerBlockEntity
 import com.unrelentless.mess.util.serializeInnerStackToTag
 import com.unrelentless.mess.util.setChunkLoaded
-import io.netty.buffer.Unpooled
-import net.fabricmc.fabric.api.network.ServerSidePacketRegistry
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory
 import net.minecraft.block.BlockState
 import net.minecraft.block.entity.BlockEntity
@@ -57,29 +55,36 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
             return list
         }
 
-        private fun writeLimbsToBuffer(limbs : MutableList<LimbBlockEntity>, buf: PacketByteBuf?) {
-            val sizes = limbs.map{it.level.size}.toIntArray()
+        private fun writeLimbsToBuffer(
+                limbs : MutableList<LimbBlockEntity>,
+                tabs: HashMap<Level, Boolean>?,
+                scrollPosition: Float,
+                searchString: String,
+                buf: PacketByteBuf?
+        ) {
+            val sizes = limbs.map { it.level.size }.toIntArray()
             val compoundTag = CompoundTag()
             val listTag = ListTag()
-            limbs.map { it.inventory.getStack().serializeInnerStackToTag() }.forEach{listTag.add(it)}
+            limbs.map { it.inventory.getStack().serializeInnerStackToTag() }.forEach { listTag.add(it) }
             compoundTag.put("items", listTag)
 
             buf?.writeIntArray(sizes)
             buf?.writeCompoundTag(compoundTag)
+            buf?.writeBoolean(tabs != null)
 
-//            selectedTabs.forEach {
-//                packetByteBuf?.writeEnumConstant(it.key)
-//                packetByteBuf?.writeBoolean(it.value)
-//            }
+            tabs?.forEach {
+                buf?.writeEnumConstant(it.key)
+                buf?.writeBoolean(it.value)
+            }
+
+            buf?.writeFloat(scrollPosition)
+            buf?.writeString(searchString)
         }
     }
 
-    private val selectedTabs: HashMap<Level, Boolean> = hashMapOf(
-            Pair(Level.LOW, true),
-            Pair(Level.MID, true),
-            Pair(Level.HIGH, true)
-    )
-
+    private val selectedTabs: HashMap<String, HashMap<Level, Boolean>> = hashMapOf()
+    private val searchStrings: HashMap<String, String> = hashMapOf()
+    private val scrolledPositions: HashMap<String, Float> = hashMapOf()
     val limbs: MutableList<LimbBlockEntity> = mutableListOf()
 
     override fun createMenu(
@@ -95,36 +100,49 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     }
 
     override fun getDisplayName(): Text = TranslatableText("container." + Mess.IDENTIFIER + ".mess")
-    override fun writeScreenOpeningData(serverPlayerEntity: ServerPlayerEntity?, packetByteBuf: PacketByteBuf?) {
-        writeLimbsToBuffer(limbs, packetByteBuf)
+    override fun writeScreenOpeningData(serverPlayerEntity: ServerPlayerEntity, packetByteBuf: PacketByteBuf?) {
+        writeLimbsToBuffer(
+                limbs,
+                selectedTabs[serverPlayerEntity.uuidAsString],
+                scrolledPositions[serverPlayerEntity.uuidAsString] ?: 0.0f,
+                searchStrings[serverPlayerEntity.uuidAsString] ?: "",
+                packetByteBuf
+        )
     }
 
     override fun fromTag(state: BlockState?, compoundTag: CompoundTag?) {
         super.fromTag(state, compoundTag)
 
-        (compoundTag?.get("tabs") as? CompoundTag)?.let { tag ->
-            selectedTabs.forEach {
-                selectedTabs[it.key] = tag.getBoolean(it.key.name)
+        val listTag = (compoundTag?.get("tabs") as? ListTag) ?: return
+        listTag.forEach { playerTags ->
+            val tabTags = (playerTags as? CompoundTag) ?: return@forEach
+            val playerId = tabTags.getString("id")
+            Level.values().forEach {
+                selectedTabs[playerId]?.put(it, tabTags.getBoolean(it.name))
             }
         }
     }
 
     override fun toTag(tag: CompoundTag): CompoundTag {
-        super.toTag(tag)
+        val tabsTag = ListTag()
 
-        val tabsTag = CompoundTag()
+        selectedTabs.forEach { playerTabs ->
+            val playerTag = CompoundTag()
+            playerTag.putString("id", playerTabs.key)
+            playerTabs.value.forEach {
+                playerTag.putBoolean(it.key.name, it.value)
+            }
 
-        selectedTabs.forEach {
-            tabsTag.putBoolean(it.key.name, it.value)
+            tabsTag.add(playerTag)
         }
 
-        tag.put("tabs", tabsTag)
 
-        return tag
+        tag.put("tabs", tabsTag)
+        return super.toTag(tag)
     }
 
-    fun onPlaced() = findLimbs(world as World, pos).forEach{it.addBrain(this)}
-    fun onBroken() = findLimbs(world as World, pos).forEach{it.removeBrain(this)}
+    fun onPlaced() = findLimbs(world as World, pos).forEach{ it.addBrain(this) }
+    fun onBroken() = findLimbs(world as World, pos).forEach{ it.removeBrain(this) }
     fun updateBrains() = limbs.forEach(LimbBlockEntity::findBrains)
     fun updateLimbs(ignoringPos: BlockPos? = null) {
         limbs.clear()
@@ -134,23 +152,28 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     fun contentChanged(player: PlayerEntity? = null) {
         world?.players
                 ?.filter { it != player }
-                ?.filter { (it.currentScreenHandler as? MessScreenHandler)?.owner?.pos == pos }
-                ?.forEach {
-                    val buf = PacketByteBuf(Unpooled.buffer())
-                    writeLimbsToBuffer(limbs, buf)
-                    ServerSidePacketRegistry.INSTANCE.sendToPlayer(it, Mess.S2C_IDENTIFIER, buf)
-                }
+                ?.filter { (it.currentScreenHandler as? MessScreenHandler)?.owner == this }
+                //TODO: Make this actually update the limbs instead of just reopening the screen
+                ?.forEach { MessScreenHandler.openScreen(cachedState, world!!, pos, it) }
     }
 
-//    fun updateTabs(selectedTabs:  HashMap<Level, Boolean>) {
-//        selectedTabs.forEach{
-//            this.selectedTabs[it.key] = it.value
-//        }
-//        markDirty()
-//    }
+    fun updateTabs(selectedTabs: HashMap<Level, Boolean>, player: PlayerEntity) {
+        this.selectedTabs[player.uuidAsString] = selectedTabs
+        markDirty()
+    }
+
+    fun updateSearchString(searchString: String, player: PlayerEntity) {
+        this.searchStrings[player.uuidAsString] = searchString
+        markDirty()
+    }
+
+    fun updateScrollPosition(scrollPosition: Float, player: PlayerEntity) {
+        this.scrolledPositions[player.uuidAsString] = scrollPosition
+        markDirty()
+    }
 
     fun chunkLoad(chunkLoad: Boolean) {
         setChunkLoaded(chunkLoad)
-        limbs.forEach{it.setChunkLoaded(chunkLoad)}
+        limbs.forEach{ it.setChunkLoaded(chunkLoad) }
     }
 }

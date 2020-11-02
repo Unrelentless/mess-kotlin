@@ -6,6 +6,7 @@ import net.minecraft.block.BlockState
 import net.minecraft.block.InventoryProvider
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.block.entity.BlockEntityType
+import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.inventory.SidedInventory
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.util.math.BlockPos
@@ -49,22 +50,20 @@ open class LimbBlockEntity(
     override fun toTag(tag: CompoundTag): CompoundTag = super.toTag(tag.serializeLimb(inventory))
     override fun getInventory(state: BlockState?, world: WorldAccess?, pos: BlockPos?): SidedInventory = inventory
 
-    override fun sync() {
-        super.sync()
-        markDirty()
-//        linkedBrains.forEach(BrainBlockEntity::contentChanged)
+    fun onContentChanged(player: PlayerEntity?) {
+        linkedBrains.forEach { it.contentChanged(player) }
     }
 
     fun onPlaced() {
         findBrains()
         linkedBrains.forEach(BrainBlockEntity::updateLimbs)
-        linkedBrains.forEach(BrainBlockEntity::contentChanged)
+        onContentChanged(null)
     }
 
     fun onBroken(fromPos: BlockPos) {
         linkedBrains.forEach { it.updateLimbs(fromPos) }
         linkedBrains.forEach(BrainBlockEntity::updateBrains)
-        linkedBrains.forEach(BrainBlockEntity::contentChanged)
+        onContentChanged(null)
     }
 
     fun addBrain(brainBlockEntity: BrainBlockEntity) {
