@@ -22,5 +22,4 @@ class LowLimbBlock: LimbBlock(lowLimbBlockSettings, Level.LOW), Clientside {
     override fun renderOnClient() {
         BlockRenderLayerMap.INSTANCE.putBlock(BLOCK, RenderLayer.getCutout())
     }
-
 }

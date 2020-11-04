@@ -14,5 +14,5 @@ fun ServerWorld.fromString(string: String): World? {
             else -> return null
         }
 
-    return this.server.getWorld(registryKey)
+    return server.getWorld(registryKey)
 }

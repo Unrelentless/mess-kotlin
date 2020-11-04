@@ -17,7 +17,7 @@ class MidLimbBlockEntity: LimbBlockEntity(ENTITY_TYPE, Level.MID) {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "mid_limb_entity")
         val ENTITY_TYPE = registerBlockEntity(IDENTIFIER) {
             BlockEntityType.Builder
-                    .create(Supplier { MidLimbBlockEntity() }, MidLimbBlock.BLOCK)
+                    .create({ MidLimbBlockEntity() }, MidLimbBlock.BLOCK)
                     .build(null)
         }
 

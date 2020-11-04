@@ -32,26 +32,26 @@ class MessScreenItemRenderer(
 ) : ItemRenderer(manager, bakery, colorMap) {
 
     override fun getModels(): ItemModels = MinecraftClient.getInstance().itemRenderer.models
-
     override fun getHeldItemModel(stack: ItemStack, world: World?, entity: LivingEntity?): BakedModel? {
         val item = stack.item
-        val bakedModel = if (item === Items.TRIDENT)
+        val bakedModel = if (item === Items.TRIDENT) {
             models.modelManager.getModel(ModelIdentifier("minecraft:trident_in_hand#inventory"))
-        else
+        } else {
             models.getModel(stack)
+        }
 
-        val clientWorld = if (world is ClientWorld) world else null
-        val bakedModel3 = bakedModel.overrides.apply(bakedModel, stack, clientWorld, entity)
+        val bakedModel3 = bakedModel.overrides.apply(bakedModel, stack, world as? ClientWorld, entity)
         return bakedModel3 ?: models.modelManager.missingModel
     }
 
     override fun renderGuiItemOverlay(renderer: TextRenderer, stack: ItemStack, x: Int, y: Int, countLabel: String?) {
         if(stack.isEmpty) return
 
-        val newCountLabel = if (stack.count > 1000)
+        val newCountLabel = if (stack.count > 1000) {
             (stack.count / 1000).toString() + "." + (stack.count % 1000 / 100).toString() + "k"
-        else
+        } else {
             stack.count.toString()
+        }
 
         if (stack.count != 1 || countLabel != null) {
             val matrixStack = MatrixStack()
@@ -79,6 +79,7 @@ class MessScreenItemRenderer(
             immediate.draw()
         }
 
+        // COPY-PASTA
         if (stack.isDamaged) {
             RenderSystem.disableDepthTest()
             RenderSystem.disableTexture()
@@ -128,6 +129,7 @@ class MessScreenItemRenderer(
         }
     }
 
+    // COPY-PASTA
     private fun renderGuiQuad(buffer: BufferBuilder, x: Int, y: Int, width: Int, height: Int, red: Int, green: Int, blue: Int,
                               alpha: Int) {
         buffer.begin(7, VertexFormats.POSITION_COLOR)

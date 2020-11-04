@@ -10,21 +10,19 @@ import net.minecraft.util.Identifier
 import net.minecraft.util.registry.Registry
 
 fun registerBlock(
-    block: Block,
-    id: Identifier
-): Block =
-    Registry.register(Registry.BLOCK, id, block)
+        block: Block,
+        id: Identifier
+): Block = Registry.register(Registry.BLOCK, id, block)
 
 fun registerBlockItem(
-    block: Block,
-    id: Identifier,
-    settings: Item.Settings = Item.Settings().group(ItemGroup.MISC)
+        block: Block,
+        id: Identifier,
+        settings: Item.Settings = Item.Settings().group(ItemGroup.MISC)
 ): BlockItem = Registry.register(Registry.ITEM, id, BlockItem(block, settings))
 
 fun <T : BlockEntity> registerBlockEntity(
-    id: Identifier,
-    blockEntityType: () -> BlockEntityType<T>
+        id: Identifier,
+        blockEntityType: () -> BlockEntityType<T>
 ): BlockEntityType<T> = Registry.register(Registry.BLOCK_ENTITY_TYPE, id, blockEntityType())
 
-fun registerItem(item: Item, id: Identifier): Item =
-        Registry.register(Registry.ITEM, id, item)
+fun registerItem(item: Item, id: Identifier): Item = Registry.register(Registry.ITEM, id, item)

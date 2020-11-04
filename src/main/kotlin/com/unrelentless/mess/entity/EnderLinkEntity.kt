@@ -31,9 +31,7 @@ class EnderLinkEntity(world: World,
             if(ticks == 0) triggerWorldEvent()
             if(shouldActuallyRemove) return remove()
             ++ticks
-        } else {
-            super.tick()
-        }
+        } else super.tick()
     }
 
     private fun triggerWorldEvent() {

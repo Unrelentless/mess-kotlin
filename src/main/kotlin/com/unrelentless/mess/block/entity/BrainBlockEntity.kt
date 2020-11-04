@@ -91,13 +91,8 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
             syncId: Int,
             playerInventory: PlayerInventory,
             player: PlayerEntity
-    ): ScreenHandler? {
-        return MessScreenHandler(
-                syncId,
-                playerInventory,
-                this
-        )
-    }
+    ): ScreenHandler? = MessScreenHandler(syncId, playerInventory, this)
+
 
     override fun getDisplayName(): Text = TranslatableText("container." + Mess.IDENTIFIER + ".mess")
     override fun writeScreenOpeningData(serverPlayerEntity: ServerPlayerEntity, packetByteBuf: PacketByteBuf?) {
@@ -149,6 +144,11 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
         limbs.addAll(findLimbs(world, pos, ignoringPos))
     }
 
+    fun contentChangedByPlayer(player: PlayerEntity) {
+        val brainsToUpdate = limbs.map { it.getBrains() }.flatten().toSet()
+        brainsToUpdate.forEach{ it.contentChanged(player) }
+    }
+
     fun contentChanged(player: PlayerEntity? = null) {
         world?.players
                 ?.filter { it != player }
@@ -157,24 +157,16 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
                 ?.forEach { MessScreenHandler.openScreen(cachedState, world!!, pos, it) }
     }
 
-    fun contentChangedByPlayer(player: PlayerEntity) {
-        val brainsToUpdate = limbs.map { it.getBrains() }.flatten().toSet()
-        brainsToUpdate.forEach{ it.contentChanged(player) }
-    }
-
-    fun updateTabs(selectedTabs: HashMap<Level, Boolean>, player: PlayerEntity) {
-        this.selectedTabs[player.uuidAsString] = selectedTabs
-        markDirty()
+    fun updateTabs(newTabs: HashMap<Level, Boolean>, player: PlayerEntity) {
+        selectedTabs[player.uuidAsString] = newTabs
     }
 
     fun updateSearchString(searchString: String, player: PlayerEntity) {
-        this.searchStrings[player.uuidAsString] = searchString
-        markDirty()
+        searchStrings[player.uuidAsString] = searchString
     }
 
     fun updateScrollPosition(scrollPosition: Float, player: PlayerEntity) {
-        this.scrolledPositions[player.uuidAsString] = scrollPosition
-        markDirty()
+        scrolledPositions[player.uuidAsString] = scrollPosition
     }
 
     fun chunkLoad(chunkLoad: Boolean) {

@@ -40,18 +40,19 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
 
     override fun hasGlint(stack: ItemStack?): Boolean = true
     override fun use(world: World, user: PlayerEntity, hand: Hand): TypedActionResult<ItemStack> {
-        return if(world.isClient)
+        return if(world.isClient) {
             TypedActionResult.fail(user.getStackInHand(hand))
-        else
+        } else {
             openScreenIfPossible(world, user)
+        }
     }
 
     override fun appendTooltip(stack: ItemStack, world: World?, tooltip: MutableList<Text>, context: TooltipContext) {
         super.appendTooltip(stack, world, tooltip, context)
-        stack.deserializeBrain()?.let {
-            tooltip.add(Text.of(it.second.capitalize(Locale.ROOT)).copy().formatted(Formatting.GOLD))
-            tooltip.add(Text.of(it.first.toShortString() ?: "Not linked"))
-        }
+        val position = stack.deserializeBrain() ?: return
+
+        tooltip.add(Text.of(position.second.capitalize(Locale.ROOT)).copy().formatted(Formatting.GOLD))
+        tooltip.add(Text.of(position.first.toShortString() ?: "Not linked"))
     }
 
     private fun openScreenIfPossible(
@@ -80,7 +81,7 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
             }
         }
 
-        if (!player.abilities.creativeMode) itemStack.decrement(1)
+        if (!player.abilities.creativeMode) { itemStack.decrement(1) }
         player.swingHand(player.activeHand, true)
 
         return TypedActionResult.success(itemStack)

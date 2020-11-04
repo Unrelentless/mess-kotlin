@@ -50,29 +50,26 @@ open class LimbBlockEntity(
     override fun toTag(tag: CompoundTag): CompoundTag = super.toTag(tag.serializeLimb(inventory))
     override fun getInventory(state: BlockState?, world: WorldAccess?, pos: BlockPos?): SidedInventory = inventory
 
-    fun onContentChanged(player: PlayerEntity? = null) {
-        linkedBrains.forEach { it.contentChanged(player) }
-    }
-
+    fun onContentChanged(player: PlayerEntity? = null) = linkedBrains.forEach { it.contentChanged(player) }
     fun onPlaced() {
         findBrains()
         linkedBrains.forEach(BrainBlockEntity::updateLimbs)
-        onContentChanged(null)
+        onContentChanged()
     }
 
     fun onBroken(fromPos: BlockPos) {
         linkedBrains.forEach { it.updateLimbs(fromPos) }
         linkedBrains.forEach(BrainBlockEntity::updateBrains)
-        onContentChanged(null)
+        onContentChanged()
     }
 
-    fun addBrain(brainBlockEntity: BrainBlockEntity) {
-        linkedBrains.add(brainBlockEntity)
-    }
+    // BRAINS!!!
+    fun getBrains(): List<BrainBlockEntity> = linkedBrains.toList()
+    fun addBrain(brainBlockEntity: BrainBlockEntity) = linkedBrains.add(brainBlockEntity)
 
     fun removeBrain(brainBlockEntity: BrainBlockEntity) {
         linkedBrains.remove(brainBlockEntity)
-        if(linkedBrains.isEmpty()) setChunkLoaded(false)
+        if(linkedBrains.isEmpty()) { setChunkLoaded(false) }
     }
 
     fun findBrains() {
@@ -80,7 +77,4 @@ open class LimbBlockEntity(
         linkedBrains.addAll(findLimbsAndBrains(world as World, pos).second)
     }
 
-    fun getBrains(): List<BrainBlockEntity> {
-        return linkedBrains.toList()
-    }
 }

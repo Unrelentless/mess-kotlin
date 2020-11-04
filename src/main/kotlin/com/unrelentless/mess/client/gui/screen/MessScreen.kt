@@ -30,16 +30,15 @@ class MessScreen(
     companion object : Clientside {
         val TEXTURE = Identifier(Mess.IDENTIFIER, "textures/gui/brain_blank.png")
         val TEXTURE_ETC = Identifier(Mess.IDENTIFIER, "textures/gui/brain_etc.png")
-
         const val ROWS = 5
         const val COLUMNS = 9
         const val INV_SIZE = ROWS * COLUMNS
-        override fun renderOnClient() {
-            ScreenRegistry.register(MessScreenHandler.HANDLER_TYPE, ::MessScreen)
-        }
+
+        override fun renderOnClient() = ScreenRegistry.register(MessScreenHandler.HANDLER_TYPE, ::MessScreen)
     }
 
     private var scrolling = false
+    private var ignoreTypedCharacter = false
     private var scrollPosition = 0.0f
     private var scrolledRows = 0
         set(newValue) {
@@ -49,19 +48,36 @@ class MessScreen(
             }
             field = newValue
         }
-    private var ignoreTypedCharacter = false
-    private var searchBox: TextFieldWidget? = null
+    private val searchBox: TextFieldWidget by lazy {
+        val searchBox = TextFieldWidget(
+                textRenderer,
+                x + 82,
+                y + 6,
+                80,
+                9,
+                TranslatableText("search." + Mess.IDENTIFIER + ".mess")
+        )
+
+        searchBox.setMaxLength(50)
+        searchBox.setHasBorder(false)
+        searchBox.setEditableColor(16777215)
+        searchBox.isVisible = true
+        searchBox.setFocusUnlocked(false)
+        searchBox.setSelected(true)
+
+        searchBox
+    }
 
     init {
-        this.backgroundHeight = 203
-        this.backgroundWidth = 195
-        this.titleX = super.titleX
-        this.playerInventoryTitleX = super.playerInventoryTitleX
+        backgroundHeight = 203
+        backgroundWidth = 195
+        titleX = super.titleX
+        playerInventoryTitleX = super.playerInventoryTitleX
     }
 
     override fun init(client: MinecraftClient, width: Int, height: Int) {
         super.init(client, width, height)
-        this.itemRenderer = MessScreenItemRenderer(
+        itemRenderer = MessScreenItemRenderer(
                 client.textureManager,
                 client.bakedModelManager,
                 (client as MinecraftClientMixin).itemColors
@@ -72,24 +88,8 @@ class MessScreen(
         super.init()
         client?.keyboard?.setRepeatEvents(true)
 
-        searchBox = TextFieldWidget(
-                textRenderer,
-                this.x + 82,
-                this.y + 6,
-                80,
-                9,
-                TranslatableText("search." + Mess.IDENTIFIER + ".mess")
-        )
-
-        searchBox?.setMaxLength(50)
-        searchBox?.setHasBorder(false)
-        searchBox?.setEditableColor(16777215)
-        searchBox?.isVisible = true
-        searchBox?.setFocusUnlocked(false)
-        searchBox?.setSelected(true)
-
         children.add(searchBox)
-        searchBox?.text = handler.searchString
+        searchBox.text = handler.searchString
         scrollPosition = handler.scrollPosition
 
         updateHandler()
@@ -97,7 +97,7 @@ class MessScreen(
 
     override fun tick() {
         super.tick()
-        searchBox?.tick()
+        searchBox.tick()
     }
 
     override fun drawForeground(matrices: MatrixStack?, mouseX: Int, mouseY: Int) {
@@ -120,13 +120,14 @@ class MessScreen(
         drawTexture(matrices, originX, originY, 0, 0, backgroundWidth, backgroundHeight)
         drawSlots(matrices)
         drawTabs(matrices)
-        drawTabIcons(matrices)
+        drawTabIcons()
         drawScrollbar(matrices)
-        searchBox?.render(matrices, mouseX, mouseY, delta)
+
+        searchBox.render(matrices, mouseX, mouseY, delta)
     }
 
     override fun render(matrices: MatrixStack?, mouseX: Int, mouseY: Int, delta: Float) {
-        this.renderBackground(matrices)
+        renderBackground(matrices)
         super.render(matrices, mouseX, mouseY, delta)
         drawMouseoverTooltip(matrices, mouseX, mouseY)
     }
@@ -134,8 +135,8 @@ class MessScreen(
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
         if(button != 0 || !isClickInScrollbar(mouseX, mouseY)) return super.mouseClicked(mouseX, mouseY, button)
         if(isClickInTab(mouseX, mouseY) != null) return true
-
         scrolling = hasScrollbar()
+
         return true
     }
 
@@ -155,12 +156,10 @@ class MessScreen(
     }
 
     override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
-        if (!this.hasScrollbar())
-            return false
+        if (!hasScrollbar()) return false
 
         val numberOfPositions = (handler.limbs.size + COLUMNS - 1) / COLUMNS - ROWS
         scrollPosition = clamp((scrollPosition - amount / numberOfPositions).toFloat(), 0.0f, 1.0f)
-
         updateHandler()
 
         return true
@@ -173,20 +172,19 @@ class MessScreen(
         val scrollbarStartY = y + 18
         val scrollbarEndY = scrollbarStartY + 112
         val absoluteScrollPosition = ((mouseY - scrollbarStartY - 7.5f) / ((scrollbarEndY - scrollbarStartY).toFloat() - 42.0f)).toFloat()
-        scrollPosition = clamp(absoluteScrollPosition, 0.0f, 1.0f)
-
         val numberOfPositions = (handler.limbs.size + COLUMNS - 1) / COLUMNS - ROWS
+
+        scrollPosition = clamp(absoluteScrollPosition, 0.0f, 1.0f)
         scrolledRows = (numberOfPositions * scrollPosition + 0.5).toInt()
 
         return true
     }
 
     override fun charTyped(chr: Char, keyCode: Int): Boolean {
-        val searchBox = this.searchBox as TextFieldWidget
         if(ignoreTypedCharacter) return false
         if(!searchBox.charTyped(chr, keyCode)) return false
-
         updateHandler()
+
         return true
     }
 
@@ -194,30 +192,26 @@ class MessScreen(
         ignoreTypedCharacter = false
         return super.keyReleased(keyCode, scanCode, modifiers)
     }
-    override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
-        val searchBox = this.searchBox as TextFieldWidget
 
+    override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
         ignoreTypedCharacter = false
 
-        val bl2 = InputUtil.fromKeyCode(keyCode, scanCode).method_30103().isPresent
-        return if (focusedSlot?.hasStack() == true && bl2 && handleHotbarKeyPressed(keyCode, scanCode)) {
+        val keyPresent = InputUtil.fromKeyCode(keyCode, scanCode).method_30103().isPresent
+
+        if (focusedSlot?.hasStack() == true && keyPresent && handleHotbarKeyPressed(keyCode, scanCode)) {
             ignoreTypedCharacter = true
-            true
-        } else {
-            val string = searchBox.text
-            if (searchBox.keyPressed(keyCode, scanCode, modifiers)) {
-                if (string != searchBox.text) {
-                    scrollPosition = 0.0f
-                    updateHandler()
-                }
-                true
-            } else {
-                if (searchBox.isFocused && searchBox.isVisible && keyCode != 256)
-                    true
-                else
-                    super.keyPressed(keyCode, scanCode, modifiers)
-            }
+
+            return true
         }
+
+        if (searchBox.keyPressed(keyCode, scanCode, modifiers)) {
+            scrollPosition = 0.0f
+            updateHandler()
+
+            return true
+        }
+
+        return if (keyCode != 256) true else super.keyPressed(keyCode, scanCode, modifiers)
     }
 
     private fun drawSlots(matrices: MatrixStack) {
@@ -230,8 +224,9 @@ class MessScreen(
 
         for (row in 0 until rowTotal) {
             val columnMax = min(totalItemsToShow - COLUMNS * row, COLUMNS)
+
             for (column in 0 until columnMax) {
-                this.drawTexture(
+                drawTexture(
                         matrices,
                         xPos + 18 * column,
                         yPos + 18 * row,
@@ -251,11 +246,12 @@ class MessScreen(
 
         for(tab in handler.selectedTabs) {
             val yOrigin = if(!tab.value) 35 else 64
-            val xPos = if(!tab.value) xPos else xPos - 3
+            val shiftedXPos = if(!tab.value) xPos else xPos - 3
             val yPos = y + 18 + (tab.key.displayIndex * 29)
-            this.drawTexture(
+
+            drawTexture(
                     matrices,
-                    xPos,
+                    shiftedXPos,
                     yPos,
                     0,
                     yOrigin,
@@ -264,7 +260,7 @@ class MessScreen(
             )
         }
     }
-    private fun drawTabIcons(matrices: MatrixStack) {
+    private fun drawTabIcons() {
         val xPos = x + backgroundWidth
 
         itemRenderer.zOffset = 100.0f
@@ -285,7 +281,7 @@ class MessScreen(
         val xPos = x + backgroundWidth
 
         client?.textureManager?.bindTexture(TEXTURE_ETC)
-        this.drawTexture(
+        drawTexture(
                 matrices,
                 xPos - 20,
                 y + 18 + (73 * scrollPosition).toInt(),
@@ -296,10 +292,10 @@ class MessScreen(
         )
     }
 
+    private fun updateHandler() = handler.updateInfo(true, searchBox!!.text, scrollPosition)
     private fun hasScrollbar(): Boolean = handler.limbs.size > INV_SIZE
     private fun isClickInScrollbar(mouseX: Double, mouseY: Double): Boolean {
         val xPos = x + backgroundWidth
-
         val widthRange = (xPos-24..xPos-10)
         val heightRange = (y+18..y+105)
 
@@ -322,9 +318,6 @@ class MessScreen(
         return null
     }
 
-    private fun updateHandler() {
-        handler.updateInfo(true, searchBox!!.text, scrollPosition)
-    }
 }
 
 private val Level.displayIndex: Int

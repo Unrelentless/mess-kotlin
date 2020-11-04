@@ -13,18 +13,18 @@ enum class Level {
     LOW, MID, HIGH;
 
     val size: Int
-    get() = when(this) {
-        LOW -> 32
-        MID -> 128
-        HIGH -> 4096
-    }
+        get() = when(this) {
+            LOW -> 32
+            MID -> 128
+            HIGH -> 4096
+        }
 
     val blockEntity: LimbBlockEntity
-    get() = when(this) {
+        get() = when(this) {
             LOW -> LowLimbBlockEntity()
             MID -> MidLimbBlockEntity()
             HIGH -> HighLimbBlockEntity()
-    }
+        }
 
     val block: Block
         get() = when(this) {

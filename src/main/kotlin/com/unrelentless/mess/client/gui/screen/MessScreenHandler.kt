@@ -55,18 +55,16 @@ class MessScreenHandler(
             syncId,
             playerInventory
     ) {
-        val inventories = buf.readIntArray().map { int ->
-            LimbInventory(Level.values().find { it.size == int }!!, null)
-        }
+        val sizes = buf.readIntArray()
+        val inventories = (buf.readCompoundTag()?.get("items") as ListTag)
+                .mapIndexedNotNull { index, tag ->
+                    val inv = LimbInventory(Level.values().find { it.size == sizes[index] }!!, null)
+                    inv.depositStack((tag as CompoundTag).deserializeInnerStack() ?: ItemStack.EMPTY)
+
+                    inv
+                }
 
         allLimbs.addAll(inventories)
-
-        val items = (buf.readCompoundTag()?.get("items") as ListTag)
-                .mapNotNull { (it as CompoundTag).deserializeInnerStack() }
-
-        allLimbs.forEachIndexed {
-            index, limb -> limb.depositStack(items[index])
-        }
 
         if(buf.readBoolean()) {
             Level.values().map {
@@ -123,12 +121,12 @@ class MessScreenHandler(
 
     override fun canUse(player: PlayerEntity?): Boolean = true
     override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity): ItemStack {
+        if(index == -1) return ItemStack.EMPTY
+
         if(!playerEntity.world.isClient) {
             syncToServer()
             createNewSlots()
         }
-
-        if(index == -1) return ItemStack.EMPTY
 
         when(actionType) {
             SlotActionType.QUICK_MOVE -> return transferSlot(playerEntity, index)
@@ -137,13 +135,14 @@ class MessScreenHandler(
             // TODO:  Implement custom quickcraft or figure out why its not working
 //            SlotActionType.QUICK_CRAFT -> return quickCraft(index, mouseButton, playerEntity)
         }
+
         return super.onSlotClick(index, mouseButton, actionType, playerEntity)
     }
 
     override fun transferSlot(player: PlayerEntity, index: Int): ItemStack {
-        val slot = slots[index]
+        if(!slots[index].hasStack()) return ItemStack.EMPTY
 
-        if(!slot.hasStack()) return ItemStack.EMPTY
+        val slot = slots[index]
         val slotStack = slot.stack
 
         // Slot clicked in MESS inventory
@@ -151,10 +150,7 @@ class MessScreenHandler(
             val count = min(slotStack.item.maxCount, slotStack.count)
             val itemStackCopy = slotStack.copy()
             itemStackCopy.count = count
-
-            if(!insertItem(itemStackCopy, limbsToDisplay.size, this.slots.size, true))
-                return ItemStack.EMPTY
-
+            insertItem(itemStackCopy, limbsToDisplay.size, this.slots.size, true)
             slotStack.decrement(count)
         } else {
             val limbWithItems = tabbedLimbs.filter { canStacksCombine(slotStack, it.getStack()) }
@@ -180,6 +176,8 @@ class MessScreenHandler(
     }
 
     private fun pickup(index: Int, mouseButton: Int, player: PlayerEntity): ItemStack {
+
+        // Click outside window
         if (index == -999) {
             val count = if(mouseButton == 0) playerInventory.cursorStack.count else 1
             player.dropItem(playerInventory.cursorStack.split(count), true)
@@ -198,9 +196,7 @@ class MessScreenHandler(
                 val count = min(slotStack.item.maxCount, slotStack.count) / (mouseButton + 1)
                 player.inventory.cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
             }
-        } else {
-            return super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, player)
-        }
+        } else return super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, player)
 
         slot.markDirty()
         if(playerInventory.player.world.isClient) { createNewSlots() }
@@ -217,8 +213,8 @@ class MessScreenHandler(
         this.searchString = searchString
         this.scrollPosition = scrollPosition
 
-        if(syncToServer) syncToServer()
-        if(playerInventory.player.world.isClient) createNewSlots()
+        if(syncToServer) { syncToServer() }
+        if(playerInventory.player.world.isClient) { createNewSlots() }
     }
 
     fun updateClientLimbs(limbs: List<LimbInventory>) {

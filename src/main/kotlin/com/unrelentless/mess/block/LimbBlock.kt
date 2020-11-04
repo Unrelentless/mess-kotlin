@@ -34,19 +34,15 @@ open class LimbBlock(settings: FabricBlockSettings, private val level: Level): B
     override fun getRenderType(state: BlockState?): BlockRenderType = BlockRenderType.MODEL
 
     override fun onUse(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity, hand: Hand, hit: BlockHitResult): ActionResult {
-        val blockEntity = world.getBlockEntity(pos)
-        val handStack = player.getStackInHand(hand)
+        val blockEntity = world.getBlockEntity(pos) as? LimbBlockEntity ?: return ActionResult.SUCCESS
+        if (Block.getBlockFromItem(player.mainHandStack.item) is LimbBlock) return ActionResult.SUCCESS
 
-        require(blockEntity is LimbBlockEntity)
-
-        if (Block.getBlockFromItem(handStack.item) is LimbBlock)
-            return ActionResult.SUCCESS
-
-        if (handStack.isEmpty)
+        if (player.mainHandStack.isEmpty) {
             withdraw(player, world, blockEntity)
-        else
-            deposit(handStack, player, hand, blockEntity)
-        
+        } else {
+            deposit(player.mainHandStack, player, hand, blockEntity)
+        }
+
         return ActionResult.SUCCESS
     }
 
@@ -54,7 +50,7 @@ open class LimbBlock(settings: FabricBlockSettings, private val level: Level): B
         super.onBreak(world, pos, state, player)
         if(world.isClient) return
 
-        val blockEntity = world.getBlockEntity(pos) as LimbBlockEntity
+        val blockEntity = world.getBlockEntity(pos) as? LimbBlockEntity ?: return
         val itemStack = ItemStack(asItem())
 
         if (!blockEntity.inventory.isEmpty) {
@@ -72,14 +68,13 @@ open class LimbBlock(settings: FabricBlockSettings, private val level: Level): B
 
         itemEntity.setToDefaultPickupDelay()
         world.spawnEntity(itemEntity)
+
         blockEntity.onBroken(pos)
     }
 
     override fun onBroken(world: WorldAccess, pos: BlockPos, state: BlockState) {
         super.onBroken(world, pos, state)
-        if(world.isClient) return
-
-        (world as World).updateNeighborsAlways(pos, this)
+        if(!world.isClient) (world as? World)?.updateNeighborsAlways(pos, this)
     }
 
     override fun onPlaced(world: World, pos: BlockPos, state: BlockState, placer: LivingEntity?, itemStack: ItemStack) {
@@ -99,7 +94,6 @@ open class LimbBlock(settings: FabricBlockSettings, private val level: Level): B
         return DefaultedList.of()
     }
 
-    @Environment(EnvType.CLIENT)
     override fun appendTooltip(stack: ItemStack, world: BlockView?, tooltip: MutableList<Text?>, options: TooltipContext?) {
         super.appendTooltip(stack, world, tooltip, options)
         val compoundTag = stack.getSubTag("BlockEntityTag")
@@ -112,11 +106,8 @@ open class LimbBlock(settings: FabricBlockSettings, private val level: Level): B
     }
 
     private fun withdraw(player: PlayerEntity, world: World, blockEntity: LimbBlockEntity) {
-        if(player.isSneaking)
-            player.inventory.offerOrDrop(world, blockEntity.inventory.removeStack(0, 1))
-        else
-            player.inventory.offerOrDrop(world, blockEntity.inventory.removeStack(0))
-
+        val count = if(!player.isSneaking) blockEntity.inventory.getStack().count else 1
+        player.inventory.offerOrDrop(world, blockEntity.inventory.removeStack(0, count))
         blockEntity.onContentChanged(player)
     }
 
