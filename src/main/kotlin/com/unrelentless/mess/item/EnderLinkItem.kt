@@ -77,6 +77,9 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
 
                 player.sendMessage(TranslatableText("message." + Mess.IDENTIFIER + ".link_broken"), false)
             } else {
+                val blockEntity = world.getBlockEntity(brain.first) as? BrainBlockEntity
+                blockEntity?.updateLimbs()
+                blockEntity?.updateBrains()
                 MessScreenHandler.openScreen(BrainBlock.BLOCK.defaultState, world, brain.first, player)
             }
         }

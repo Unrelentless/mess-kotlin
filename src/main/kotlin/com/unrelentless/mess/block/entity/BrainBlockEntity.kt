@@ -142,6 +142,8 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     fun updateLimbs(ignoringPos: BlockPos? = null) {
         limbs.clear()
         limbs.addAll(findLimbs(world, pos, ignoringPos))
+
+        println(limbs.size)
     }
 
     fun contentChangedByPlayer(player: PlayerEntity) {
@@ -152,7 +154,11 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     fun contentChanged(player: PlayerEntity? = null) {
         world?.players
                 ?.filter { it != player }
-                ?.filter { (it.currentScreenHandler as? MessScreenHandler)?.owner == this }
+                ?.filter {
+                    println(it?.name?.string + pos)
+                    println("${(it.currentScreenHandler as? MessScreenHandler)?.owner == this}")
+                    (it.currentScreenHandler as? MessScreenHandler)?.owner == this
+                }
                 //TODO: Make this actually update the limbs instead of just reopening the screen
                 ?.forEach { MessScreenHandler.openScreen(cachedState, world!!, pos, it) }
     }

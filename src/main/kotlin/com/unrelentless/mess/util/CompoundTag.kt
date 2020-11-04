@@ -3,7 +3,6 @@ package com.unrelentless.mess.util
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.util.Identifier
-import net.minecraft.util.math.BlockPos
 import net.minecraft.util.registry.Registry
 
 fun CompoundTag.serializeLimb(limbInventory: LimbInventory): CompoundTag {

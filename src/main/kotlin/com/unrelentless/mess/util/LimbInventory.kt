@@ -4,7 +4,6 @@ import com.unrelentless.mess.block.LimbBlock
 import com.unrelentless.mess.block.entity.LimbBlockEntity
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable
 import net.minecraft.block.Block
-import net.minecraft.block.entity.BlockEntity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.inventory.SidedInventory
 import net.minecraft.item.ItemStack
@@ -43,7 +42,7 @@ class LimbInventory(val level: Level, private val owner: LimbBlockEntity?): Side
         if (owner == null || owner.world?.isClient == true) return
 
         owner.markDirty()
-        if(owner?.world?.isClient == false) (owner as? BlockEntityClientSerializable)?.sync()
+        if(owner.world?.isClient == false) { (owner as? BlockEntityClientSerializable)?.sync() }
     }
 
     fun getStack(): ItemStack = getStack(0)

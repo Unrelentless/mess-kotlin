@@ -9,6 +9,7 @@ import com.unrelentless.mess.util.LimbSlot
 import com.unrelentless.mess.util.deserializeInnerStack
 import io.netty.buffer.Unpooled
 import net.fabricmc.fabric.api.network.ClientSidePacketRegistry
+import net.fabricmc.fabric.api.network.ServerSidePacketRegistry
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
 import net.minecraft.block.BlockState
 import net.minecraft.entity.player.PlayerEntity
@@ -36,17 +37,38 @@ class MessScreenHandler(
     companion object {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "mess_screen_handler")
         val HANDLER_TYPE: ScreenHandlerType<MessScreenHandler> = ScreenHandlerRegistry.registerExtended(IDENTIFIER, ::MessScreenHandler)
+        val C2S_IDENTIFIER = Identifier(Mess.IDENTIFIER, "sync_server")
 
         fun openScreen(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity) {
             state.createScreenHandlerFactory(world, pos).let {
+                val blockEntity = world.getBlockEntity(pos) as? BrainBlockEntity ?: return
+                println(blockEntity.limbs.size)
                 // Hack to clear search strings and scroll position when new screen
                 if(player.currentScreenHandler !is MessScreenHandler) {
-                    val blockEntity = world.getBlockEntity(pos) as? BrainBlockEntity ?: return
                     blockEntity.updateScrollPosition(0.0f, player)
                     blockEntity.updateSearchString("", player)
                 }
-
                 player.openHandledScreen(it)
+            }
+        }
+
+        init {
+            ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
+                val scrollPosition = buffer.readFloat()
+                val searchString = buffer.readString(Short.MAX_VALUE.toInt())
+                val tabs: Map<Level, Boolean> = Level.values().map {
+                    Pair(buffer.readEnumConstant(Level::class.java), buffer.readBoolean())
+                }.toMap()
+
+                context.taskQueue.execute {
+                    val handler = context.player.currentScreenHandler as? MessScreenHandler ?: return@execute
+
+                    for(tab in tabs) { handler.selectedTabs[tab.key] = tab.value }
+                    handler.updateInfo(false, searchString, scrollPosition)
+                    handler.owner?.updateTabs(handler.selectedTabs, context.player)
+                    handler.owner?.updateSearchString(handler.searchString, context.player)
+                    handler.owner?.updateScrollPosition(handler.scrollPosition, context.player)
+                }
             }
         }
     }
@@ -277,6 +299,6 @@ class MessScreenHandler(
             buffer.writeBoolean(it.value)
         }
 
-        ClientSidePacketRegistry.INSTANCE.sendToServer(Mess.C2S_IDENTIFIER, buffer)
+        ClientSidePacketRegistry.INSTANCE.sendToServer(C2S_IDENTIFIER, buffer)
     }
 }

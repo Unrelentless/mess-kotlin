@@ -33,7 +33,7 @@ public class EnderEyeItemMixin {
         BlockPos blockPos = context.getBlockPos();
         BlockState blockState = world.getBlockState(blockPos);
 
-        if(!(blockState.getBlock() instanceof BrainBlock) || !player.isSneaking()) {
+        if(!(blockState.getBlock() instanceof BrainBlock) || player == null || !player.isSneaking()) {
             cir.setReturnValue(cir.getReturnValue());
             return;
         }
@@ -49,7 +49,8 @@ public class EnderEyeItemMixin {
             linkedStack.putSubTag("brain", tag);
             player.setStackInHand(context.getHand(), linkedStack);
 
-            ((BrainBlockEntity) world.getBlockEntity(blockPos)).chunkLoad(true);
+            BrainBlockEntity brainBlockEntity = ((BrainBlockEntity) world.getBlockEntity(blockPos));
+            if (brainBlockEntity != null) { brainBlockEntity.chunkLoad(true); }
         }
 
         cir.setReturnValue(ActionResult.CONSUME);
@@ -58,10 +59,10 @@ public class EnderEyeItemMixin {
     @Inject(at = @At("HEAD"), method = "use(Lnet/minecraft/world/World;Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/util/Hand;)Lnet/minecraft/util/TypedActionResult;", cancellable = true)
     public void use(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<TypedActionResult<ItemStack>> cir) {
         ItemStack itemStack = user.getStackInHand(hand);
-        HitResult hitResult = ItemRaycastInvoker.invokeRaycast(world, user, RaycastContext.FluidHandling.NONE);
+        BlockHitResult hitResult = ItemRaycastInvoker.invokeRaycast(world, user, RaycastContext.FluidHandling.NONE);
 
         if (hitResult.getType() == HitResult.Type.BLOCK
-                && world.getBlockState(((BlockHitResult)hitResult).getBlockPos()).isOf(BrainBlock.Companion.getBLOCK())) {
+                && world.getBlockState(hitResult.getBlockPos()).isOf(BrainBlock.Companion.getBLOCK())) {
             cir.setReturnValue(TypedActionResult.pass(itemStack));
         }
     }

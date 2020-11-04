@@ -2,7 +2,6 @@ package com.unrelentless.mess.block
 
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.block.entity.BrainBlockEntity
-import com.unrelentless.mess.client.gui.screen.MessScreen
 import com.unrelentless.mess.client.gui.screen.MessScreenHandler
 import com.unrelentless.mess.item.EnderLinkItem
 import com.unrelentless.mess.settings.brainBlockSettings

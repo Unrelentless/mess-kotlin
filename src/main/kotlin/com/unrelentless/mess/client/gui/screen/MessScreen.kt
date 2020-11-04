@@ -292,7 +292,7 @@ class MessScreen(
         )
     }
 
-    private fun updateHandler() = handler.updateInfo(true, searchBox!!.text, scrollPosition)
+    private fun updateHandler() = handler.updateInfo(true, searchBox.text, scrollPosition)
     private fun hasScrollbar(): Boolean = handler.limbs.size > INV_SIZE
     private fun isClickInScrollbar(mouseX: Double, mouseY: Double): Boolean {
         val xPos = x + backgroundWidth

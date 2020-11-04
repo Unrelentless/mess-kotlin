@@ -28,8 +28,6 @@ class Mess : ModInitializer, ClientModInitializer {
 
     companion object {
         const val IDENTIFIER = "mess"
-        val C2S_IDENTIFIER = Identifier(IDENTIFIER, "sync_server")
-        val S2C_IDENTIFIER = Identifier(IDENTIFIER, "sync_client")
 
         val BLOCKS: List<Block> = listOf(
                 LowLimbBlock.BLOCK,
@@ -57,51 +55,12 @@ class Mess : ModInitializer, ClientModInitializer {
         }
     }
 
-    override fun onInitialize() {
-        ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
-            val scrollPosition = buffer.readFloat()
-            val searchString = buffer.readString(Short.MAX_VALUE.toInt())
-            val tabs: Map<Level, Boolean> = Level.values().map {
-                Pair(buffer.readEnumConstant(Level::class.java), buffer.readBoolean())
-            }.toMap()
-
-            context.taskQueue.execute {
-                (context.player.currentScreenHandler as? MessScreenHandler).let {
-                    for(tab in tabs) {
-                        it?.selectedTabs?.set(tab.key, tab.value)
-                    }
-                    it?.updateInfo(false, searchString, scrollPosition)
-                    it?.owner?.updateTabs(it.selectedTabs, context.player)
-                    it?.owner?.updateSearchString(it.searchString, context.player)
-                    it?.owner?.updateScrollPosition(it.scrollPosition, context.player)
-                }
-            }
-        }
-    }
-
+    override fun onInitialize() {}
     override fun onInitializeClient() {
         listOf(BLOCKS, ITEMS, ENTITIES, SCREENS)
                 .flatten()
                 .filterIsInstance<Clientside>()
                 .forEach{it.renderOnClient()}
-
-        ClientSidePacketRegistry.INSTANCE.register(S2C_IDENTIFIER) { context, buf ->
-            val inventories = buf.readIntArray().map { int ->
-                LimbInventory(Level.values().find { it.size == int }!!, null)
-            }
-
-            (buf.readCompoundTag()?.get("items") as ListTag)
-                    .mapNotNull { (it as CompoundTag).deserializeInnerStack() }
-                    .forEachIndexed { index, item ->
-                        inventories[index].depositStack(item)
-                    }
-
-            context.taskQueue.execute {
-                (context.player.currentScreenHandler as? MessScreenHandler).let { handler ->
-                    handler?.updateClientLimbs(inventories)
-                }
-            }
-        }
     }
 }
 

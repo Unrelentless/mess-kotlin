@@ -2,9 +2,8 @@ package com.unrelentless.mess.block
 
 import com.unrelentless.mess.block.entity.LimbBlockEntity
 import com.unrelentless.mess.util.Level
-import com.unrelentless.mess.util.*
-import net.fabricmc.api.EnvType
-import net.fabricmc.api.Environment
+import com.unrelentless.mess.util.deserializeInnerStack
+import com.unrelentless.mess.util.serializeInnerStackToTag
 import net.fabricmc.fabric.api.`object`.builder.v1.block.FabricBlockSettings
 import net.minecraft.block.Block
 import net.minecraft.block.BlockRenderType
@@ -69,7 +68,7 @@ open class LimbBlock(settings: FabricBlockSettings, private val level: Level): B
         itemEntity.setToDefaultPickupDelay()
         world.spawnEntity(itemEntity)
 
-        blockEntity.onBroken(pos)
+        blockEntity.onBreak(pos)
     }
 
     override fun onBroken(world: WorldAccess, pos: BlockPos, state: BlockState) {

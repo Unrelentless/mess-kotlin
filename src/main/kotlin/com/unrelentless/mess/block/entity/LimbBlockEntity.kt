@@ -23,15 +23,16 @@ open class LimbBlockEntity(
         private fun findLimbsAndBrains(
                 world: World?,
                 pos: BlockPos,
+                ignoringPos: BlockPos? = null,
                 set: Pair<ArrayList<BlockPos>, ArrayList<BrainBlockEntity>> = Pair(arrayListOf(), arrayListOf())
         ): Pair<ArrayList<BlockPos>, ArrayList<BrainBlockEntity>> {
             Direction.values().forEach {
                 val nextPos = pos.offset(it)
                 val nextBlock = world?.getBlockEntity(nextPos) ?: return@forEach
 
-                if (nextBlock is LimbBlockEntity && !set.first.contains(nextPos) && !nextBlock.isRemoved) {
+                if (nextPos != ignoringPos && nextBlock is LimbBlockEntity && !set.first.contains(nextPos) && !nextBlock.isRemoved) {
                     set.first.add(nextPos)
-                    findLimbsAndBrains(world, nextPos, set)
+                    findLimbsAndBrains(world, nextPos, ignoringPos, set)
                 } else if(nextBlock is BrainBlockEntity && !set.second.contains(nextBlock)) {
                     set.second.add(nextBlock)
                 }
@@ -57,13 +58,12 @@ open class LimbBlockEntity(
         onContentChanged()
     }
 
-    fun onBroken(fromPos: BlockPos) {
+    fun onBreak(fromPos: BlockPos) {
         linkedBrains.forEach { it.updateLimbs(fromPos) }
         linkedBrains.forEach(BrainBlockEntity::updateBrains)
         onContentChanged()
     }
 
-    // BRAINS!!!
     fun getBrains(): List<BrainBlockEntity> = linkedBrains.toList()
     fun addBrain(brainBlockEntity: BrainBlockEntity) = linkedBrains.add(brainBlockEntity)
 
@@ -74,7 +74,6 @@ open class LimbBlockEntity(
 
     fun findBrains() {
         linkedBrains.clear()
-        linkedBrains.addAll(findLimbsAndBrains(world as World, pos).second)
+        linkedBrains.addAll(findLimbsAndBrains(world as World, pos, pos).second)
     }
-
 }
