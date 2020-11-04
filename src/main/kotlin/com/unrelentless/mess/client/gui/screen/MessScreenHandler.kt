@@ -176,7 +176,7 @@ class MessScreenHandler(
         if(playerInventory.player.world.isClient) createNewSlots()
         owner?.contentChanged(player)
 
-        return slotStack
+        return ItemStack.EMPTY
     }
 
     private fun pickup(index: Int, mouseButton: Int, player: PlayerEntity): ItemStack {
