@@ -157,6 +157,11 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
                 ?.forEach { MessScreenHandler.openScreen(cachedState, world!!, pos, it) }
     }
 
+    fun contentChangedByPlayer(player: PlayerEntity) {
+        val brainsToUpdate = limbs.map { it.getBrains() }.flatten().toSet()
+        brainsToUpdate.forEach{ it.contentChanged(player) }
+    }
+
     fun updateTabs(selectedTabs: HashMap<Level, Boolean>, player: PlayerEntity) {
         this.selectedTabs[player.uuidAsString] = selectedTabs
         markDirty()

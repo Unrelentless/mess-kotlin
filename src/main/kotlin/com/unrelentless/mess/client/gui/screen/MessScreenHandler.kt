@@ -173,8 +173,8 @@ class MessScreenHandler(
         }
 
         slot.markDirty()
-        if(playerInventory.player.world.isClient) createNewSlots()
-        owner?.contentChanged(player)
+        if(playerInventory.player.world.isClient) { createNewSlots() }
+        owner?.contentChangedByPlayer(player)
 
         return ItemStack.EMPTY
     }
@@ -203,8 +203,8 @@ class MessScreenHandler(
         }
 
         slot.markDirty()
-        if(playerInventory.player.world.isClient) createNewSlots()
-        owner?.contentChanged(player)
+        if(playerInventory.player.world.isClient) { createNewSlots() }
+        owner?.contentChangedByPlayer(player)
 
         return ItemStack.EMPTY
     }

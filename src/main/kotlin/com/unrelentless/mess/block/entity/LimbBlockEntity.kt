@@ -50,7 +50,7 @@ open class LimbBlockEntity(
     override fun toTag(tag: CompoundTag): CompoundTag = super.toTag(tag.serializeLimb(inventory))
     override fun getInventory(state: BlockState?, world: WorldAccess?, pos: BlockPos?): SidedInventory = inventory
 
-    fun onContentChanged(player: PlayerEntity?) {
+    fun onContentChanged(player: PlayerEntity? = null) {
         linkedBrains.forEach { it.contentChanged(player) }
     }
 
@@ -78,5 +78,9 @@ open class LimbBlockEntity(
     fun findBrains() {
         linkedBrains.clear()
         linkedBrains.addAll(findLimbsAndBrains(world as World, pos).second)
+    }
+
+    fun getBrains(): List<BrainBlockEntity> {
+        return linkedBrains.toList()
     }
 }
