@@ -126,7 +126,7 @@ class MessScreen(
         drawTexture(matrices, originX, originY, 0, 0, backgroundWidth, backgroundHeight)
         drawSlots(matrices)
         drawTabs(matrices)
-        drawTabIcons()
+        drawTabIcons(matrices)
         drawScrollbar(matrices)
 
         searchBox.render(matrices, mouseX, mouseY, delta)
@@ -288,19 +288,25 @@ class MessScreen(
             )
         }
     }
-    private fun drawTabIcons() {
+    private fun drawTabIcons(matrices: MatrixStack) {
         val xPos = x + backgroundWidth
-
+        val scale = 0.8f
         itemRenderer.zOffset = 100.0f
+
+        RenderSystem.pushMatrix()
+        RenderSystem.scalef(scale, scale, 1.0f)
 
         for(level in handler.selectedTabs.keys) {
             val yPos = y + 18 + (level.displayIndex * 29)
-
-            RenderSystem.enableRescaleNormal()
             val itemStack = ItemStack(level.block, 1)
-            itemRenderer.renderInGuiWithOverrides(itemStack, xPos + 4, yPos + 6)
-            itemRenderer.renderGuiItemOverlay(textRenderer, itemStack, xPos + 4, yPos + 6)
+            val levelStringWidth = textRenderer.getWidth(level.name)
+
+            itemRenderer.renderInGuiWithOverrides(itemStack, ((xPos + 6) / scale).toInt(), ((yPos + 4) / scale).toInt())
+            itemRenderer.renderGuiItemOverlay(textRenderer, itemStack, ((xPos + 6) / scale).toInt(), ((yPos + 4) / scale).toInt())
+            textRenderer.draw(matrices, level.name, (xPos + 14 - levelStringWidth/2) / scale, (yPos + 18) / scale, 4210752)
         }
+
+        RenderSystem.popMatrix()
 
         itemRenderer.zOffset = 0.0f
     }
