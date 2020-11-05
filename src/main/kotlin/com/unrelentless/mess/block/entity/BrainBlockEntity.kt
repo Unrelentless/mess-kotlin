@@ -2,11 +2,11 @@ package com.unrelentless.mess.block.entity
 
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.block.BrainBlock
-import com.unrelentless.mess.util.Level
-import com.unrelentless.mess.util.registerBlockEntity
 import com.unrelentless.mess.extensions.serializeInnerStackToTag
 import com.unrelentless.mess.extensions.setChunkLoaded
 import com.unrelentless.mess.screen.MessScreenHandler
+import com.unrelentless.mess.util.Level
+import com.unrelentless.mess.util.registerBlockEntity
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory
 import net.minecraft.block.BlockState
 import net.minecraft.block.entity.BlockEntity
@@ -113,8 +113,10 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
         listTag.forEach { playerTags ->
             val tabTags = (playerTags as? CompoundTag) ?: return@forEach
             val playerId = tabTags.getString("id")
+
+            selectedTabs[playerId] = hashMapOf()
             Level.values().forEach {
-                selectedTabs[playerId]?.put(it, tabTags.getBoolean(it.name))
+                selectedTabs[playerId]?.set(it, tabTags.getBoolean(it.name))
             }
         }
 
