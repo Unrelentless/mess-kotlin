@@ -47,7 +47,7 @@ class MessScreenItemRenderer(
     override fun renderGuiItemOverlay(renderer: TextRenderer, stack: ItemStack, x: Int, y: Int, countLabel: String?) {
         if(stack.isEmpty) return
 
-        val newCountLabel = if (stack.count > 1000) {
+        val newCountLabel = if (stack.count >= 1000) {
             (stack.count / 1000).toString() + "." + (stack.count % 1000 / 100).toString() + "k"
         } else {
             stack.count.toString()
@@ -55,8 +55,8 @@ class MessScreenItemRenderer(
 
         if (stack.count != 1 || countLabel != null) {
             val matrixStack = MatrixStack()
-            val scaleMultiplier = if (stack.count < 100) 1.0f else 0.8f
-            val xTranslate = if (stack.count < 100) 2 else 0
+            val scaleMultiplier = 0.8f
+            val xTranslate = if (stack.count < 100) 1 else 0
 
             matrixStack.scale(scaleMultiplier, scaleMultiplier, 1.0f)
             matrixStack.translate(0.0, 0.0, (zOffset + 200.0f).toDouble())

@@ -18,6 +18,7 @@ import net.minecraft.item.ItemStack
 import net.minecraft.loot.context.LootContext
 import net.minecraft.text.Text
 import net.minecraft.util.ActionResult
+import net.minecraft.util.Formatting
 import net.minecraft.util.Hand
 import net.minecraft.util.collection.DefaultedList
 import net.minecraft.util.hit.BlockHitResult
@@ -25,6 +26,8 @@ import net.minecraft.util.math.BlockPos
 import net.minecraft.world.BlockView
 import net.minecraft.world.World
 import net.minecraft.world.WorldAccess
+import java.util.*
+import kotlin.math.min
 
 
 open class LimbBlock(settings: FabricBlockSettings, private val level: Level): BlockWithEntity(settings.nonOpaque()) {
@@ -100,13 +103,15 @@ open class LimbBlock(settings: FabricBlockSettings, private val level: Level): B
         compoundTag?.deserializeInnerStack()?.let {
             val mutableText = it.name.shallowCopy()
             mutableText.append(" x").append(it.count.toString())
-            tooltip.add(mutableText)
+            tooltip.add(mutableText.formatted(Formatting.GRAY))
         }
     }
 
     private fun withdraw(player: PlayerEntity, world: World, blockEntity: LimbBlockEntity) {
-        val count = if(!player.isSneaking) blockEntity.inventory.getStack().count else 1
-        player.inventory.offerOrDrop(world, blockEntity.inventory.removeStack(0, count))
+        val count = if(!player.isSneaking) {
+            min(blockEntity.inventory.getStack().count, blockEntity.inventory.getStack().item.maxCount)
+        } else 1
+        player.inventory.offerOrDrop(world, blockEntity.inventory.withdrawStack(count))
         blockEntity.onContentChanged(player)
     }
 
