@@ -8,7 +8,7 @@ import com.unrelentless.mess.mixin.EyeOfEnderEntityAccessor
 import com.unrelentless.mess.settings.enderLinkItemSettings
 import com.unrelentless.mess.extensions.deserializeBrain
 import com.unrelentless.mess.extensions.fromString
-import com.unrelentless.mess.extensions.registerItem
+import com.unrelentless.mess.util.registerItem
 import com.unrelentless.mess.screen.MessScreenHandler
 import net.minecraft.client.item.TooltipContext
 import net.minecraft.entity.player.PlayerEntity

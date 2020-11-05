@@ -5,8 +5,8 @@ import com.unrelentless.mess.settings.messBlockItemSettings
 import com.unrelentless.mess.settings.midLimbBlockSettings
 import com.unrelentless.mess.util.Clientside
 import com.unrelentless.mess.util.Level
-import com.unrelentless.mess.extensions.registerBlock
-import com.unrelentless.mess.extensions.registerBlockItem
+import com.unrelentless.mess.util.registerBlock
+import com.unrelentless.mess.util.registerBlockItem
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap
 import net.minecraft.client.render.RenderLayer
 import net.minecraft.util.Identifier

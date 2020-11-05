@@ -3,7 +3,7 @@ package com.unrelentless.mess.block.entity
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.block.BrainBlock
 import com.unrelentless.mess.util.Level
-import com.unrelentless.mess.extensions.registerBlockEntity
+import com.unrelentless.mess.util.registerBlockEntity
 import com.unrelentless.mess.extensions.serializeInnerStackToTag
 import com.unrelentless.mess.extensions.setChunkLoaded
 import com.unrelentless.mess.screen.MessScreenHandler
