@@ -42,7 +42,6 @@ class MessScreenHandler(
         fun openScreen(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity) {
             state.createScreenHandlerFactory(world, pos).let {
                 val blockEntity = world.getBlockEntity(pos) as? BrainBlockEntity ?: return
-                println(blockEntity.limbs.size)
                 // Hack to clear search strings and scroll position when new screen
                 if(player.currentScreenHandler !is MessScreenHandler) {
                     blockEntity.updateScrollPosition(0.0f, player)
@@ -107,27 +106,11 @@ class MessScreenHandler(
     private val allLimbs: MutableList<LimbInventory> = mutableListOf()
         get() = owner?.limbs?.map(LimbBlockEntity::inventory)?.toMutableList() ?: field
 
-    private val tabbedLimbs: List<LimbInventory>
-        get() = allLimbs.filter { selectedTabs[it.level] == true }
-
-    val limbs: List<LimbInventory>
-        get() = tabbedLimbs.filter { limb ->
-            //TODO: Find a way to do this on the server
-//            val toolTip = limb.getStack().getTooltip(null, TooltipContext.Default.NORMAL)
-//                    .map { Formatting.strip(it.string)?.trim()?.toLowerCase() }
-//                    .first { !it.isNullOrEmpty() }
-
-            limb.getStack().item.toString().contains(searchString)
-        }
-
-    val limbsToDisplay: List<LimbInventory>
-        get() = limbs
-                .sortedBy { it.isEmpty }
-                .filterIndexed { index, _ ->
-                    val min = scrolledRows * MessScreen.COLUMNS
-                    val max = min(limbs.size, MessScreen.INV_SIZE + min)
-                    (min until max).contains(index)
-                }
+    private var tabbedLimbs: List<LimbInventory> = emptyList()
+    var limbs: List<LimbInventory> = emptyList()
+        private set
+    var limbsToDisplay: List<LimbInventory> = emptyList()
+        private set
 
     var scrollPosition = 0.0f
         private set
@@ -144,11 +127,7 @@ class MessScreenHandler(
     override fun canUse(player: PlayerEntity?): Boolean = true
     override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity): ItemStack {
         if(index == -1) return ItemStack.EMPTY
-
-        if(!playerEntity.world.isClient) {
-            syncToServer()
-            createNewSlots()
-        }
+        if(!playerEntity.world.isClient) { createNewSlots() }
 
         when(actionType) {
             SlotActionType.QUICK_MOVE -> return transferSlot(playerEntity, index)
@@ -191,7 +170,7 @@ class MessScreenHandler(
         }
 
         slot.markDirty()
-        if(playerInventory.player.world.isClient) { createNewSlots() }
+        updateInfo(false)
         owner?.contentChangedByPlayer(player)
 
         return ItemStack.EMPTY
@@ -221,7 +200,7 @@ class MessScreenHandler(
         } else return super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, player)
 
         slot.markDirty()
-        if(playerInventory.player.world.isClient) { createNewSlots() }
+        updateInfo(false)
         owner?.contentChangedByPlayer(player)
 
         return ItemStack.EMPTY
@@ -235,18 +214,35 @@ class MessScreenHandler(
         this.searchString = searchString
         this.scrollPosition = scrollPosition
 
+        updateLimbs()
+
         if(syncToServer) { syncToServer() }
         if(playerInventory.player.world.isClient) { createNewSlots() }
     }
 
-    fun updateClientLimbs(limbs: List<LimbInventory>) {
-        allLimbs.clear()
-        allLimbs.addAll(limbs)
-        createNewSlots()
-    }
-
     fun toggleTab(selectedTabLevel: Level) {
         selectedTabs[selectedTabLevel] = !selectedTabs[selectedTabLevel]!!
+    }
+
+    private fun updateLimbs() {
+        tabbedLimbs = allLimbs.filter { selectedTabs[it.level] == true }
+
+        limbs = tabbedLimbs.filter { limb ->
+            //TODO: Find a way to do this on the server
+//            val toolTip = limb.getStack().getTooltip(null, TooltipContext.Default.NORMAL)
+//                    .map { Formatting.strip(it.string)?.trim()?.toLowerCase() }
+//                    .first { !it.isNullOrEmpty() }
+
+            limb.getStack().item.toString().contains(searchString)
+        }
+
+        limbsToDisplay = limbs
+                .sortedBy { it.isEmpty }
+                .filterIndexed { index, _ ->
+                    val min = scrolledRows * MessScreen.COLUMNS
+                    val max = min(limbs.size, MessScreen.INV_SIZE + min)
+                    (min until max).contains(index)
+                }
     }
 
     private fun createNewSlots() {

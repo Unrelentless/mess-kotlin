@@ -38,16 +38,18 @@ class MessScreen(
     }
 
     private var scrolling = false
-    private var ignoreTypedCharacter = false
-    private var scrollPosition = 0.0f
-    private var scrolledRows = 0
         set(newValue) {
-            if(newValue != field)
-            {
-                updateHandler()
-            }
+            if(!newValue) { updateHandler() }
             field = newValue
         }
+    private var scrolledRows = 0
+        set(newValue) {
+            if(field != newValue) { updateHandler() }
+            field = newValue
+        }
+    private var ignoreTypedCharacter = false
+    private var scrollPosition = 0.0f
+
     private val searchBox: TextFieldWidget by lazy {
         val searchBox = TextFieldWidget(
                 textRenderer,
@@ -160,7 +162,7 @@ class MessScreen(
 
         val numberOfPositions = (handler.limbs.size + COLUMNS - 1) / COLUMNS - ROWS
         scrollPosition = clamp((scrollPosition - amount / numberOfPositions).toFloat(), 0.0f, 1.0f)
-        updateHandler()
+        scrolledRows = (numberOfPositions * scrollPosition + 0.5).toInt()
 
         return true
     }
@@ -292,8 +294,10 @@ class MessScreen(
         )
     }
 
-    private fun updateHandler() = handler.updateInfo(true, searchBox.text, scrollPosition)
     private fun hasScrollbar(): Boolean = handler.limbs.size > INV_SIZE
+    private fun updateHandler(syncToServer: Boolean = true) {
+        handler.updateInfo(syncToServer, searchBox.text, scrollPosition)
+    }
     private fun isClickInScrollbar(mouseX: Double, mouseY: Double): Boolean {
         val xPos = x + backgroundWidth
         val widthRange = (xPos-24..xPos-10)
