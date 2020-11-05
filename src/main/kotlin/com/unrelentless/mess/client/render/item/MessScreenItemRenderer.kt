@@ -56,7 +56,7 @@ class MessScreenItemRenderer(
         if (stack.count != 1 || countLabel != null) {
             val matrixStack = MatrixStack()
             val scaleMultiplier = 0.8f
-            val xTranslate = if (stack.count < 100) 1 else 0
+            val xTranslate = if (stack.count < 10) 2 else if (stack.count < 100) 1 else 0
 
             matrixStack.scale(scaleMultiplier, scaleMultiplier, 1.0f)
             matrixStack.translate(0.0, 0.0, (zOffset + 200.0f).toDouble())
