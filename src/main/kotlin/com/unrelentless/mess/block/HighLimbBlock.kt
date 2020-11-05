@@ -16,7 +16,7 @@ class HighLimbBlock: LimbBlock(highLimbBlockSettings, Level.HIGH), Clientside {
     companion object {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "high_limb")
         val BLOCK = registerBlock(HighLimbBlock(), IDENTIFIER)
-        val BLOCK_ITEM = registerBlockItem(BLOCK, IDENTIFIER, messBlockItemSettings)
+        val BLOCK_ITEM = registerBlockItem(BLOCK, IDENTIFIER, messBlockItemSettings.fireproof())
     }
 
     override fun renderOnClient() {
