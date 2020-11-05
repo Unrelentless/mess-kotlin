@@ -44,11 +44,20 @@ open class LimbBlockEntity(
 
     val inventory: LimbInventory by lazy { LimbInventory(level, this) }
     private val linkedBrains: MutableSet<BrainBlockEntity> = mutableSetOf()
+    var chunkLoaded: Boolean = false
+        private set
 
     override fun fromClientTag(tag: CompoundTag) = fromTag(cachedState, tag)
     override fun toClientTag(tag: CompoundTag): CompoundTag = toTag(tag)
-    override fun fromTag(state: BlockState?, tag: CompoundTag) = super.fromTag(state, tag.deserializeLimb(inventory))
-    override fun toTag(tag: CompoundTag): CompoundTag = super.toTag(tag.serializeLimb(inventory))
+    override fun fromTag(state: BlockState?, tag: CompoundTag){
+        super.fromTag(state, tag.deserializeLimb(inventory))
+        chunkLoad(tag.getBoolean("chunkLoaded"))
+    }
+    override fun toTag(tag: CompoundTag): CompoundTag {
+        tag.putBoolean("chunkLoaded", chunkLoaded)
+        return super.toTag(tag.serializeLimb(inventory))
+    }
+
     override fun getInventory(state: BlockState?, world: WorldAccess?, pos: BlockPos?): SidedInventory = inventory
 
     fun onContentChanged(player: PlayerEntity? = null) = linkedBrains.forEach { it.contentChanged(player) }
@@ -61,6 +70,7 @@ open class LimbBlockEntity(
     fun onBreak(fromPos: BlockPos) {
         linkedBrains.forEach { it.updateLimbs(fromPos) }
         linkedBrains.forEach(BrainBlockEntity::updateBrains)
+        chunkLoad(false)
         onContentChanged()
     }
 
@@ -69,11 +79,18 @@ open class LimbBlockEntity(
 
     fun removeBrain(brainBlockEntity: BrainBlockEntity) {
         linkedBrains.remove(brainBlockEntity)
-        if(linkedBrains.isEmpty()) { setChunkLoaded(false) }
+        if(linkedBrains.isEmpty()) { chunkLoad(false) }
     }
 
     fun findBrains() {
         linkedBrains.clear()
         linkedBrains.addAll(findLimbsAndBrains(world as World, pos, pos).second)
+        if(linkedBrains.isEmpty()) { chunkLoad(false) }
+    }
+
+    fun chunkLoad(chunkLoad: Boolean) {
+        chunkLoaded = chunkLoad
+        setChunkLoaded(chunkLoad)
+        markDirty()
     }
 }

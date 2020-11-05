@@ -50,7 +50,10 @@ public class EnderEyeItemMixin {
             player.setStackInHand(context.getHand(), linkedStack);
 
             BrainBlockEntity brainBlockEntity = ((BrainBlockEntity) world.getBlockEntity(blockPos));
-            if (brainBlockEntity != null) { brainBlockEntity.chunkLoad(true); }
+            if (brainBlockEntity != null) {
+                brainBlockEntity.updateLimbs(null);
+                brainBlockEntity.chunkLoad(true);
+            }
         }
 
         cir.setReturnValue(ActionResult.CONSUME);

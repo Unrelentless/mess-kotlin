@@ -81,18 +81,19 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
             buf?.writeString(searchString)
         }
     }
+    val limbs: MutableList<LimbBlockEntity> = mutableListOf()
 
     private val selectedTabs: HashMap<String, HashMap<Level, Boolean>> = hashMapOf()
     private val searchStrings: HashMap<String, String> = hashMapOf()
     private val scrolledPositions: HashMap<String, Float> = hashMapOf()
-    val limbs: MutableList<LimbBlockEntity> = mutableListOf()
+    var chunkLoaded: Boolean = false
+        private set
 
     override fun createMenu(
             syncId: Int,
             playerInventory: PlayerInventory,
             player: PlayerEntity
     ): ScreenHandler? = MessScreenHandler(syncId, playerInventory, this)
-
 
     override fun getDisplayName(): Text = TranslatableText("container." + Mess.IDENTIFIER + ".mess")
     override fun writeScreenOpeningData(serverPlayerEntity: ServerPlayerEntity, packetByteBuf: PacketByteBuf?) {
@@ -116,6 +117,8 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
                 selectedTabs[playerId]?.put(it, tabTags.getBoolean(it.name))
             }
         }
+
+        chunkLoad(compoundTag.getBoolean("chunkLoaded"))
     }
 
     override fun toTag(tag: CompoundTag): CompoundTag {
@@ -131,8 +134,8 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
             tabsTag.add(playerTag)
         }
 
-
         tag.put("tabs", tabsTag)
+        tag.putBoolean("chunkLoaded", chunkLoaded)
         return super.toTag(tag)
     }
 
@@ -142,6 +145,7 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     fun updateLimbs(ignoringPos: BlockPos? = null) {
         limbs.clear()
         limbs.addAll(findLimbs(world, pos, ignoringPos))
+        chunkLoad(chunkLoaded)
     }
 
     fun contentChangedByPlayer(player: PlayerEntity) {
@@ -170,7 +174,10 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     }
 
     fun chunkLoad(chunkLoad: Boolean) {
+        limbs.forEach { it.chunkLoad(chunkLoad) }
+
+        chunkLoaded = chunkLoad
         setChunkLoaded(chunkLoad)
-        limbs.forEach{ it.setChunkLoaded(chunkLoad) }
+        markDirty()
     }
 }
