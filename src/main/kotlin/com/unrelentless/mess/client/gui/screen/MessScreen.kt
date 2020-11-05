@@ -1,5 +1,6 @@
 package com.unrelentless.mess.client.gui.screen
 
+import com.mojang.blaze3d.platform.GlStateManager
 import com.mojang.blaze3d.systems.RenderSystem
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.client.render.item.MessScreenItemRenderer
@@ -228,6 +229,8 @@ class MessScreen(
             val columnMax = min(totalItemsToShow - COLUMNS * row, COLUMNS)
 
             for (column in 0 until columnMax) {
+                val index = column + (row * COLUMNS)
+
                 drawTexture(
                         matrices,
                         xPos + 18 * column,
@@ -237,6 +240,26 @@ class MessScreen(
                         18,
                         18
                 )
+
+                if(index < handler.limbsToDisplay.size) {
+                    val level = handler.limbsToDisplay[index].level
+
+                    RenderSystem.color4f(1.0f, 1.0f, 1.0f, 0.25f);
+                    RenderSystem.enableBlend()
+
+                    drawTexture(
+                            matrices,
+                            xPos + 1 + 18 * column,
+                            yPos + 1 + 18 * row,
+                            0 + (level.displayIndex * 16),
+                            93,
+                            16,
+                            16
+                    )
+
+                    RenderSystem.disableBlend()
+                    RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
+                }
             }
         }
     }
