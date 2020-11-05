@@ -1,6 +1,5 @@
 package com.unrelentless.mess.client.gui.screen
 
-import com.mojang.blaze3d.platform.GlStateManager
 import com.mojang.blaze3d.systems.RenderSystem
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.client.render.item.MessScreenItemRenderer
@@ -51,25 +50,14 @@ class MessScreen(
     private var ignoreTypedCharacter = false
     private var scrollPosition = 0.0f
 
-    private val searchBox: TextFieldWidget by lazy {
-        val searchBox = TextFieldWidget(
-                textRenderer,
-                x + 82,
-                y + 6,
-                80,
-                9,
-                TranslatableText("search." + Mess.IDENTIFIER + ".mess")
-        )
-
-        searchBox.setMaxLength(50)
-        searchBox.setHasBorder(false)
-        searchBox.setEditableColor(16777215)
-        searchBox.isVisible = true
-        searchBox.setFocusUnlocked(false)
-        searchBox.setSelected(true)
-
-        searchBox
-    }
+    private var searchBox: TextFieldWidget = TextFieldWidget(
+            textRenderer,
+            x + 82,
+            y + 6,
+            80,
+            9,
+            TranslatableText("search." + Mess.IDENTIFIER + ".mess")
+    )
 
     init {
         backgroundHeight = 203
@@ -91,6 +79,21 @@ class MessScreen(
         super.init()
         client?.keyboard?.setRepeatEvents(true)
 
+        searchBox = TextFieldWidget(
+                textRenderer,
+                x + 82,
+                y + 6,
+                80,
+                9,
+                TranslatableText("search." + Mess.IDENTIFIER + ".mess")
+        )
+
+        searchBox.setMaxLength(50)
+        searchBox.setHasBorder(false)
+        searchBox.setEditableColor(16777215)
+        searchBox.isVisible = true
+        searchBox.setFocusUnlocked(false)
+        searchBox.setSelected(true)
         children.add(searchBox)
         searchBox.text = handler.searchString
         scrollPosition = handler.scrollPosition
@@ -244,7 +247,7 @@ class MessScreen(
                 if(index < handler.limbsToDisplay.size) {
                     val level = handler.limbsToDisplay[index].level
 
-                    RenderSystem.color4f(1.0f, 1.0f, 1.0f, 0.25f);
+                    RenderSystem.color4f(1.0f, 1.0f, 1.0f, 0.25f)
                     RenderSystem.enableBlend()
 
                     drawTexture(
@@ -258,7 +261,7 @@ class MessScreen(
                     )
 
                     RenderSystem.disableBlend()
-                    RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
+                    RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f)
                 }
             }
         }
