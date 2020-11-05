@@ -8,21 +8,12 @@ import com.unrelentless.mess.block.entity.HighLimbBlockEntity
 import com.unrelentless.mess.block.entity.LowLimbBlockEntity
 import com.unrelentless.mess.block.entity.MidLimbBlockEntity
 import com.unrelentless.mess.client.gui.screen.MessScreen
-import com.unrelentless.mess.client.gui.screen.MessScreenHandler
 import com.unrelentless.mess.item.EnderLinkItem
 import com.unrelentless.mess.util.Clientside
-import com.unrelentless.mess.util.Level
-import com.unrelentless.mess.util.LimbInventory
-import com.unrelentless.mess.util.deserializeInnerStack
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.api.ModInitializer
-import net.fabricmc.fabric.api.network.ClientSidePacketRegistry
-import net.fabricmc.fabric.api.network.ServerSidePacketRegistry
 import net.minecraft.block.Block
 import net.minecraft.item.Item
-import net.minecraft.nbt.CompoundTag
-import net.minecraft.nbt.ListTag
-import net.minecraft.util.Identifier
 
 class Mess : ModInitializer, ClientModInitializer {
 

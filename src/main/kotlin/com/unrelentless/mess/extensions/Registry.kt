@@ -1,4 +1,4 @@
-package com.unrelentless.mess.util
+package com.unrelentless.mess.extensions
 
 import net.minecraft.block.Block
 import net.minecraft.block.entity.BlockEntity

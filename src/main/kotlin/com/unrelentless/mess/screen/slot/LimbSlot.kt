@@ -1,4 +1,4 @@
-package com.unrelentless.mess.util
+package com.unrelentless.mess.screen.slot
 
 import com.unrelentless.mess.block.LimbBlock
 import net.minecraft.block.Block

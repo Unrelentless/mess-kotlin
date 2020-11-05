@@ -1,7 +1,8 @@
-package com.unrelentless.mess.util
+package com.unrelentless.mess.inventory
 
 import com.unrelentless.mess.block.LimbBlock
 import com.unrelentless.mess.block.entity.LimbBlockEntity
+import com.unrelentless.mess.util.Level
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable
 import net.minecraft.block.Block
 import net.minecraft.entity.player.PlayerEntity

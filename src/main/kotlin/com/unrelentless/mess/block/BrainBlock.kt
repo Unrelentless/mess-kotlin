@@ -2,12 +2,12 @@ package com.unrelentless.mess.block
 
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.block.entity.BrainBlockEntity
-import com.unrelentless.mess.client.gui.screen.MessScreenHandler
 import com.unrelentless.mess.item.EnderLinkItem
 import com.unrelentless.mess.settings.brainBlockSettings
 import com.unrelentless.mess.settings.messBlockItemSettings
-import com.unrelentless.mess.util.registerBlock
-import com.unrelentless.mess.util.registerBlockItem
+import com.unrelentless.mess.extensions.registerBlock
+import com.unrelentless.mess.extensions.registerBlockItem
+import com.unrelentless.mess.screen.MessScreenHandler
 import net.minecraft.block.BlockRenderType
 import net.minecraft.block.BlockState
 import net.minecraft.block.BlockWithEntity

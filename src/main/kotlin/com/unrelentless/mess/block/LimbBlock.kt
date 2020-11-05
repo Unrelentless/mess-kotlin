@@ -2,8 +2,8 @@ package com.unrelentless.mess.block
 
 import com.unrelentless.mess.block.entity.LimbBlockEntity
 import com.unrelentless.mess.util.Level
-import com.unrelentless.mess.util.deserializeInnerStack
-import com.unrelentless.mess.util.serializeInnerStackToTag
+import com.unrelentless.mess.extensions.deserializeInnerStack
+import com.unrelentless.mess.extensions.serializeInnerStackToTag
 import net.fabricmc.fabric.api.`object`.builder.v1.block.FabricBlockSettings
 import net.minecraft.block.Block
 import net.minecraft.block.BlockRenderType

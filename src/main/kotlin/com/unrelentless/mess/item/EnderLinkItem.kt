@@ -3,14 +3,13 @@ package com.unrelentless.mess.item
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.block.BrainBlock
 import com.unrelentless.mess.block.entity.BrainBlockEntity
-import com.unrelentless.mess.client.gui.screen.MessScreen
-import com.unrelentless.mess.client.gui.screen.MessScreenHandler
 import com.unrelentless.mess.entity.EnderLinkEntity
 import com.unrelentless.mess.mixin.EyeOfEnderEntityAccessor
 import com.unrelentless.mess.settings.enderLinkItemSettings
-import com.unrelentless.mess.util.deserializeBrain
-import com.unrelentless.mess.util.fromString
-import com.unrelentless.mess.util.registerItem
+import com.unrelentless.mess.extensions.deserializeBrain
+import com.unrelentless.mess.extensions.fromString
+import com.unrelentless.mess.extensions.registerItem
+import com.unrelentless.mess.screen.MessScreenHandler
 import net.minecraft.client.item.TooltipContext
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.item.Item
@@ -27,7 +26,6 @@ import net.minecraft.util.Identifier
 import net.minecraft.util.TypedActionResult
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.World
-import net.minecraft.world.dimension.DimensionType
 import java.util.*
 
 

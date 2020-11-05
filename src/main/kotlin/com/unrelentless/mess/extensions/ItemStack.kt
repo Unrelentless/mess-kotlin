@@ -1,4 +1,4 @@
-package com.unrelentless.mess.util
+package com.unrelentless.mess.extensions
 
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.CompoundTag

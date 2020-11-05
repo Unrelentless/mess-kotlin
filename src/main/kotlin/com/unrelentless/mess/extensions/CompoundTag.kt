@@ -1,5 +1,6 @@
-package com.unrelentless.mess.util
+package com.unrelentless.mess.extensions
 
+import com.unrelentless.mess.inventory.LimbInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.util.Identifier

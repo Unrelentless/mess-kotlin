@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.client.render.item.MessScreenItemRenderer
 import com.unrelentless.mess.mixin.MinecraftClientMixin
+import com.unrelentless.mess.screen.MessScreenHandler
 import com.unrelentless.mess.util.Clientside
 import com.unrelentless.mess.util.Level
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry
@@ -22,9 +23,9 @@ import java.lang.Integer.min
 
 
 class MessScreen(
-        handler: MessScreenHandler?,
-        inventory: PlayerInventory?,
-        title: Text?
+    handler: MessScreenHandler?,
+    inventory: PlayerInventory?,
+    title: Text?
 ) : HandledScreen<MessScreenHandler>(handler, inventory, title) {
 
     companion object : Clientside {

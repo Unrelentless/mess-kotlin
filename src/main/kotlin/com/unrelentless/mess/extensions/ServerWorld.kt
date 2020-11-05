@@ -1,4 +1,4 @@
-package com.unrelentless.mess.util
+package com.unrelentless.mess.extensions
 
 import net.minecraft.server.world.ServerWorld
 import net.minecraft.util.registry.RegistryKey

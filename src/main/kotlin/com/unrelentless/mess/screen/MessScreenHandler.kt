@@ -1,12 +1,13 @@
-package com.unrelentless.mess.client.gui.screen
+package com.unrelentless.mess.screen
 
 import com.unrelentless.mess.Mess
 import com.unrelentless.mess.block.entity.BrainBlockEntity
 import com.unrelentless.mess.block.entity.LimbBlockEntity
+import com.unrelentless.mess.client.gui.screen.MessScreen
 import com.unrelentless.mess.util.Level
-import com.unrelentless.mess.util.LimbInventory
-import com.unrelentless.mess.util.LimbSlot
-import com.unrelentless.mess.util.deserializeInnerStack
+import com.unrelentless.mess.screen.slot.LimbSlot
+import com.unrelentless.mess.extensions.deserializeInnerStack
+import com.unrelentless.mess.inventory.LimbInventory
 import io.netty.buffer.Unpooled
 import net.fabricmc.fabric.api.network.ClientSidePacketRegistry
 import net.fabricmc.fabric.api.network.ServerSidePacketRegistry

@@ -1,5 +1,9 @@
 package com.unrelentless.mess.block.entity
 
+import com.unrelentless.mess.extensions.deserializeLimb
+import com.unrelentless.mess.extensions.serializeLimb
+import com.unrelentless.mess.extensions.setChunkLoaded
+import com.unrelentless.mess.inventory.LimbInventory
 import com.unrelentless.mess.util.*
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable
 import net.minecraft.block.BlockState
