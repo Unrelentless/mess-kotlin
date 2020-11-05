@@ -233,8 +233,7 @@ class MessScreenHandler(
 //            val toolTip = limb.getStack().getTooltip(null, TooltipContext.Default.NORMAL)
 //                    .map { Formatting.strip(it.string)?.trim()?.toLowerCase() }
 //                    .first { !it.isNullOrEmpty() }
-
-            limb.getStack().item.toString().contains(searchString)
+                limb.getStack().item.name.string.toLowerCase().contains(searchString.toLowerCase())
         }
 
         limbsToDisplay = limbs
