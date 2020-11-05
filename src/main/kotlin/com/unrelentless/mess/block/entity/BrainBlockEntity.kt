@@ -122,6 +122,8 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
     }
 
     override fun toTag(tag: CompoundTag): CompoundTag {
+        super.toTag(tag)
+
         val tabsTag = ListTag()
 
         selectedTabs.forEach { playerTabs ->
@@ -136,7 +138,8 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
 
         tag.put("tabs", tabsTag)
         tag.putBoolean("chunkLoaded", chunkLoaded)
-        return super.toTag(tag)
+
+        return tag
     }
 
     fun onPlaced() = findLimbs(world as World, pos).forEach{ it.addBrain(this) }
