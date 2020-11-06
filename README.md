@@ -50,7 +50,7 @@ The brain GUI provides multiple functions:
 
 ## Ender Link
 
-The Ender Link will serve as your remote connection to the brain on your adventures.
+The Ender Link will serve as your remote connection to the brain on your adventures. It even works in other dimensions.
 
 While sneaking, right-clicking an "Eye of Ender" on a brain will create an Ender Link to the brain at that specific location and when used remotely will access the brain's GUI.
 
