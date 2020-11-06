@@ -20,7 +20,7 @@ M.E.S.S. limbs hold items and come in 3 tiers
 
 Limbs, themselves, do not have a UI and items can be deposited and withdrawn by Right-clicking.
 
-Low and Mid tier limbs can be ugraded in the "Smithing Table".
+Low and Mid tier limbs can be upgraded in the "Smithing Table".
 This process retains the items stored in the limb.
 
 **Upgrade Low -> Mid**
