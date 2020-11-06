@@ -5,12 +5,12 @@ The **Modular Ender Storage System** mod adds a storage system that loosely fits
 
 It is meant to supplement the vanilla experience without breaking it *too much*.
 
-### Blocks/Items added
+## Blocks/Items added
 The M.E.S.S. mod adds 4 blocks, an item and a GUI, which are explained below.
 ![](web/additions.png)
 
 
-### Limbs
+## Limbs
 M.E.S.S. limbs hold items and come in 3 tiers
 
 |        | Low | Mid | High |
@@ -32,7 +32,7 @@ This process retains the items stored in the limb.
 ![](web/upgrade_mid.png)
 
 
-### Brain
+## Brain
 When limbs are connected to the M.E.S.S. brain, it will become the single point of access to the limbs' inventories.
 
 The brain is crafted like so:
@@ -48,7 +48,7 @@ The brain GUI provides multiple functions:
 2. You can search through the limbs for specific items.
 3. You can toggle which tier limbs to show and items deposited/withdrawn will only go into those tier limbs.
 
-### Ender Link
+## Ender Link
 
 The Ender Link will serve as your remote connection to the brain on your adventures.
 
