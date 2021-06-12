@@ -19,9 +19,11 @@ import net.minecraft.world.World
 import net.minecraft.world.WorldAccess
 
 open class LimbBlockEntity(
-        type: BlockEntityType<*>,
-        val level: Level
-) : BlockEntity(type), BlockEntityClientSerializable, InventoryProvider {
+    type: BlockEntityType<*>,
+    val level: Level,
+    pos: BlockPos?,
+    state: BlockState?,
+) : BlockEntity(type, pos, state), BlockEntityClientSerializable, InventoryProvider {
 
     companion object {
         private fun findLimbsAndBrains(
@@ -51,16 +53,27 @@ open class LimbBlockEntity(
     var chunkLoaded: Boolean = false
         private set
 
-    override fun fromClientTag(tag: NbtCompound) = fromTag(cachedState, tag)
-    override fun toClientTag(tag: NbtCompound): NbtCompound = toTag(tag)
-    override fun fromTag(state: BlockState?, tag: NbtCompound){
-        super.fromTag(state, tag.deserializeLimb(inventory))
-        chunkLoad(tag.getBoolean("chunkLoaded"))
+    override fun fromClientTag(tag: NbtCompound) = readNbt(tag)
+    override fun toClientTag(tag: NbtCompound): NbtCompound = writeNbt(tag)
+
+    override fun readNbt(nbt: NbtCompound?) {
+        super.readNbt(nbt)
+        chunkLoad(nbt!!.getBoolean("chunkLoaded"))
     }
-    override fun toTag(tag: NbtCompound): NbtCompound {
-        tag.putBoolean("chunkLoaded", chunkLoaded)
-        return super.toTag(tag.serializeLimb(inventory))
+
+    override fun writeNbt(nbt: NbtCompound?): NbtCompound {
+        nbt?.putBoolean("chunkLoaded", chunkLoaded)
+        return super.writeNbt(nbt?.serializeLimb(inventory))
     }
+
+//    override fun fromTag(state: BlockState?, tag: NbtCompound){
+//        super.fromTag(state, tag.deserializeLimb(inventory))
+//        chunkLoad(tag.getBoolean("chunkLoaded"))
+//    }
+//    override fun toTag(tag: NbtCompound): NbtCompound {
+//        tag.putBoolean("chunkLoaded", chunkLoaded)
+//        return super.toTag(tag.serializeLimb(inventory))
+//    }
 
     override fun getInventory(state: BlockState?, world: WorldAccess?, pos: BlockPos?): SidedInventory = inventory
 
