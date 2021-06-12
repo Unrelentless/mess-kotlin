@@ -21,15 +21,20 @@ class EnderLinkEntity(world: World,
     private val shouldActuallyRemove
         get() = ticks >= MAX_TICKS
 
-    override fun remove() {
+
+    override fun remove(reason: RemovalReason?) {
         handler?.execute()
-        super.remove()
+        super.remove(reason)
     }
+//    override fun remove() {
+//        handler?.execute()
+//        super.remove()
+//    }
 
     override fun tick() {
         if((this as EyeOfEnderEntityAccessor).lifeSpan > MAX_LIFESPAN && !world.isClient) {
             if(ticks == 0) triggerWorldEvent()
-            if(shouldActuallyRemove) return remove()
+            if(shouldActuallyRemove) return remove(RemovalReason.KILLED)
             ++ticks
         } else super.tick()
     }
