@@ -26,7 +26,7 @@ class HighLimbBlockEntity(
         }
 
         override fun renderOnClient() {
-            BlockEntityRendererRegistry.INSTANCE.register(ENTITY_TYPE) { LimbEntityRenderer(it) }
+            BlockEntityRendererRegistry.INSTANCE.register(ENTITY_TYPE) { LimbEntityRenderer() }
         }
     }
 }

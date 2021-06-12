@@ -23,7 +23,7 @@ class LowLimbBlockEntity(pos: BlockPos?, state: BlockState?) : LimbBlockEntity(E
         }
 
         override fun renderOnClient() {
-            BlockEntityRendererRegistry.INSTANCE.register(ENTITY_TYPE) { LimbEntityRenderer<LowLimbBlockEntity>(it) }
+            BlockEntityRendererRegistry.INSTANCE.register(ENTITY_TYPE) { LimbEntityRenderer<LowLimbBlockEntity>() }
         }
     }
 }

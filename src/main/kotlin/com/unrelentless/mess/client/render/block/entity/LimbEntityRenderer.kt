@@ -13,7 +13,7 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 
-class LimbEntityRenderer<T: LimbBlockEntity>(dispatcher: BlockEntityRenderDispatcher): BlockEntityRenderer<T> {
+class LimbEntityRenderer<T: LimbBlockEntity>: BlockEntityRenderer<T> {
 
     private val randomOffset = Random.nextDouble(100.0, 200.0)
 
