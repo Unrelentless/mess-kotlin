@@ -27,6 +27,7 @@ import net.minecraft.util.TypedActionResult
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.World
 import java.util.*
+import kotlin.random.Random
 
 
 class EnderLinkItem : Item(enderLinkItemSettings) {
@@ -109,7 +110,7 @@ class EnderLinkItem : Item(enderLinkItemSettings) {
                 SoundEvents.ENTITY_ENDER_EYE_LAUNCH,
                 SoundCategory.NEUTRAL,
                 0.5f,
-                0.4f / (RANDOM.nextFloat() * 0.4f + 0.8f)
+                0.4f / (Random.nextFloat() * 0.4f + 0.8f)
         )
     }
 }
