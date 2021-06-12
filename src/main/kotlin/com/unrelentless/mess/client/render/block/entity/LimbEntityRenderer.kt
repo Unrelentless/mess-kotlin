@@ -9,13 +9,13 @@ import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher
 import net.minecraft.client.render.block.entity.BlockEntityRenderer
 import net.minecraft.client.render.model.json.ModelTransformation
 import net.minecraft.client.util.math.MatrixStack
+import net.minecraft.client.util.math.Vector3d
 import net.minecraft.client.util.math.Vector3f
 import kotlin.math.sin
 import kotlin.random.Random
 
 
-class LimbEntityRenderer<T: LimbBlockEntity>(dispatcher: BlockEntityRenderDispatcher):
-        BlockEntityRenderer<T>(dispatcher) {
+class LimbEntityRenderer<T: LimbBlockEntity>(dispatcher: BlockEntityRenderDispatcher): BlockEntityRenderer<T> {
 
     private val randomOffset = Random.nextDouble(100.0, 200.0)
 
@@ -32,11 +32,16 @@ class LimbEntityRenderer<T: LimbBlockEntity>(dispatcher: BlockEntityRenderDispat
 
         matrices.push()
         matrices.translate(0.5, 0.3 + offset, 0.5)
-        matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((blockEntity.world!!.time + tickDelta) * 4))
+//        matrices.multiply(Vector3d.POSITIVE_Y.getDegreesQuaternion((blockEntity.world!!.time + tickDelta) * 4))
 
         MinecraftClient.getInstance().itemRenderer.renderItem(
                 blockEntity.inventory.getStack(0),
-                ModelTransformation.Mode.GROUND, lightAbove, OverlayTexture.DEFAULT_UV, matrices, vertexConsumers
+                ModelTransformation.Mode.GROUND,
+                lightAbove,
+            OverlayTexture.DEFAULT_UV,
+            matrices,
+            vertexConsumers,
+            0
         )
 
         matrices.pop()
