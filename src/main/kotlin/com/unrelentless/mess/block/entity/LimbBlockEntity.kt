@@ -57,7 +57,7 @@ open class LimbBlockEntity(
     override fun toClientTag(tag: NbtCompound): NbtCompound = writeNbt(tag)
 
     override fun readNbt(nbt: NbtCompound?) {
-        super.readNbt(nbt)
+        super.readNbt(nbt?.deserializeLimb(inventory))
         chunkLoad(nbt!!.getBoolean("chunkLoaded"))
     }
 
