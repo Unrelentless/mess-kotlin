@@ -16,8 +16,8 @@ import net.minecraft.block.BlockState
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.item.ItemStack
-import net.minecraft.nbt.CompoundTag
-import net.minecraft.nbt.ListTag
+import net.minecraft.nbt.NbtCompound
+import net.minecraft.nbt.NbtList
 import net.minecraft.network.PacketByteBuf
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.ScreenHandlerType
@@ -78,10 +78,10 @@ class MessScreenHandler(
             playerInventory
     ) {
         val sizes = buf.readIntArray()
-        val inventories = (buf.readCompoundTag()?.get("items") as ListTag)
+        val inventories = (buf.readNbtCompound()?.get("items") as NbtList)
                 .mapIndexedNotNull { index, tag ->
                     val inv = LimbInventory(Level.values().find { it.size == sizes[index] }!!, null)
-                    inv.depositStack((tag as CompoundTag).deserializeInnerStack() ?: ItemStack.EMPTY)
+                    inv.depositStack((tag as NbtCompound).deserializeInnerStack() ?: ItemStack.EMPTY)
 
                     inv
                 }

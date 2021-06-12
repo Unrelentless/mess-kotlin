@@ -32,7 +32,7 @@ import kotlin.math.min
 
 open class LimbBlock(settings: FabricBlockSettings, private val level: Level): BlockWithEntity(settings.nonOpaque()) {
 
-    override fun createBlockEntity(world: BlockView?): BlockEntity? = level.blockEntity
+    override fun createBlockEntity(pos: BlockPos?, state: BlockState?): BlockEntity? = level.blockEntity
     override fun getRenderType(state: BlockState?): BlockRenderType = BlockRenderType.MODEL
 
     override fun onUse(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity, hand: Hand, hit: BlockHitResult): ActionResult {
@@ -111,7 +111,7 @@ open class LimbBlock(settings: FabricBlockSettings, private val level: Level): B
         val count = if(!player.isSneaking) {
             min(blockEntity.inventory.getStack().count, blockEntity.inventory.getStack().item.maxCount)
         } else 1
-        player.inventory.offerOrDrop(world, blockEntity.inventory.withdrawStack(count))
+        player.inventory.offerOrDrop(blockEntity.inventory.withdrawStack(count))
         blockEntity.onContentChanged(player)
     }
 

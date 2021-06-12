@@ -1,15 +1,15 @@
 package com.unrelentless.mess.extensions
 
 import net.minecraft.item.ItemStack
-import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.NbtCompound
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.registry.Registry
 
-fun ItemStack.serializeInnerStackToTag(): CompoundTag {
-    val mainTag = CompoundTag()
+fun ItemStack.serializeInnerStackToTag(): NbtCompound {
+    val mainTag = NbtCompound()
     val itemStack = if(!isEmpty) this else ItemStack.EMPTY
 
-    val compoundTag = CompoundTag()
+    val compoundTag = NbtCompound()
     val identifier = Registry.ITEM.getId(itemStack.item)
 
     compoundTag.putString("id", identifier.toString())

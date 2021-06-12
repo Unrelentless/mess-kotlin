@@ -20,7 +20,6 @@ import net.minecraft.util.Hand
 import net.minecraft.util.Identifier
 import net.minecraft.util.hit.BlockHitResult
 import net.minecraft.util.math.BlockPos
-import net.minecraft.world.BlockView
 import net.minecraft.world.World
 
 class BrainBlock: BlockWithEntity(brainBlockSettings) {
@@ -30,7 +29,7 @@ class BrainBlock: BlockWithEntity(brainBlockSettings) {
         val BLOCK_ITEM = registerBlockItem(BLOCK, IDENTIFIER, messBlockItemSettings)
     }
 
-    override fun createBlockEntity(world: BlockView?): BlockEntity? = BrainBlockEntity()
+    override fun createBlockEntity(pos: BlockPos?, state: BlockState?): BlockEntity? = BrainBlockEntity(pos, state)
     override fun getRenderType(state: BlockState?): BlockRenderType = BlockRenderType.MODEL
 
     override fun onUse(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity, hand: Hand, hit: BlockHitResult): ActionResult {

@@ -12,7 +12,7 @@ import net.minecraft.block.entity.BlockEntity
 import net.minecraft.block.entity.BlockEntityType
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.inventory.SidedInventory
-import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.NbtCompound
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Direction
 import net.minecraft.world.World
@@ -51,13 +51,13 @@ open class LimbBlockEntity(
     var chunkLoaded: Boolean = false
         private set
 
-    override fun fromClientTag(tag: CompoundTag) = fromTag(cachedState, tag)
-    override fun toClientTag(tag: CompoundTag): CompoundTag = toTag(tag)
-    override fun fromTag(state: BlockState?, tag: CompoundTag){
+    override fun fromClientTag(tag: NbtCompound) = fromTag(cachedState, tag)
+    override fun toClientTag(tag: NbtCompound): NbtCompound = toTag(tag)
+    override fun fromTag(state: BlockState?, tag: NbtCompound){
         super.fromTag(state, tag.deserializeLimb(inventory))
         chunkLoad(tag.getBoolean("chunkLoaded"))
     }
-    override fun toTag(tag: CompoundTag): CompoundTag {
+    override fun toTag(tag: NbtCompound): NbtCompound {
         tag.putBoolean("chunkLoaded", chunkLoaded)
         return super.toTag(tag.serializeLimb(inventory))
     }

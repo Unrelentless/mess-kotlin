@@ -2,13 +2,13 @@ package com.unrelentless.mess.extensions
 
 import com.unrelentless.mess.inventory.LimbInventory
 import net.minecraft.item.ItemStack
-import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.NbtCompound
 import net.minecraft.util.Identifier
 import net.minecraft.util.registry.Registry
 
-fun CompoundTag.serializeLimb(limbInventory: LimbInventory): CompoundTag {
+fun NbtCompound.serializeLimb(limbInventory: LimbInventory): NbtCompound {
     val itemStack = limbInventory.getStack()
-    val compoundTag = CompoundTag()
+    val compoundTag = NbtCompound()
 
     compoundTag.putString("id", Registry.ITEM.getId(itemStack.item).toString())
     compoundTag.putInt("count", itemStack.count)
@@ -20,7 +20,7 @@ fun CompoundTag.serializeLimb(limbInventory: LimbInventory): CompoundTag {
     return this
 }
 
-fun CompoundTag.deserializeLimb(limbInventory: LimbInventory): CompoundTag {
+fun NbtCompound.deserializeLimb(limbInventory: LimbInventory): NbtCompound {
     if(!contains("item")) return this
 
     val compoundTag = this.getCompound("item")
@@ -35,7 +35,7 @@ fun CompoundTag.deserializeLimb(limbInventory: LimbInventory): CompoundTag {
     return this
 }
 
-fun CompoundTag.deserializeInnerStack(): ItemStack? {
+fun NbtCompound.deserializeInnerStack(): ItemStack? {
     if(!this.contains("item")) return null
 
     val compoundTag = this.getCompound("item")

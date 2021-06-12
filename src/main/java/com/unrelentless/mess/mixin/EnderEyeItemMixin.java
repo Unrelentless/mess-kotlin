@@ -8,7 +8,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.EnderEyeItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
@@ -40,7 +40,7 @@ public class EnderEyeItemMixin {
 
         if(!world.isClient) {
             ItemStack linkedStack = new ItemStack(EnderLinkItem.Companion.getITEM(), stack.getCount());
-            CompoundTag tag = new CompoundTag();
+            NbtCompound tag = new NbtCompound();
             tag.putInt("x", blockPos.getX());
             tag.putInt("y", blockPos.getY());
             tag.putInt("z", blockPos.getZ());

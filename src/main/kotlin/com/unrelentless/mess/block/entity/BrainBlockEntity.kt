@@ -13,8 +13,8 @@ import net.minecraft.block.entity.BlockEntity
 import net.minecraft.block.entity.BlockEntityType
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
-import net.minecraft.nbt.CompoundTag
-import net.minecraft.nbt.ListTag
+import net.minecraft.nbt.NbtCompound
+import net.minecraft.nbt.NbtList
 import net.minecraft.network.PacketByteBuf
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.server.network.ServerPlayerEntity
@@ -26,7 +26,7 @@ import net.minecraft.util.math.Direction
 import net.minecraft.world.World
 
 
-class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
+class BrainBlockEntity(pos: BlockPos?, state: BlockState?) : BlockEntity(ENTITY_TYPE, pos, state), ExtendedScreenHandlerFactory {
 
     companion object {
         val IDENTIFIER = Identifier(Mess.IDENTIFIER, "brain_entity")
@@ -63,13 +63,13 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
                 buf: PacketByteBuf?
         ) {
             val sizes = limbs.map { it.level.size }.toIntArray()
-            val compoundTag = CompoundTag()
-            val listTag = ListTag()
+            val compoundTag = NbtCompound()
+            val listTag = NbtList()
             limbs.map { it.inventory.getStack().serializeInnerStackToTag() }.forEach { listTag.add(it) }
             compoundTag.put("items", listTag)
 
             buf?.writeIntArray(sizes)
-            buf?.writeCompoundTag(compoundTag)
+            buf?.writeNbt(compoundTag)
             buf?.writeBoolean(tabs != null)
 
             tabs?.forEach {
@@ -106,12 +106,12 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
         )
     }
 
-    override fun fromTag(state: BlockState?, compoundTag: CompoundTag?) {
+    override fun fromTag(state: BlockState?, compoundTag: NbtCompound?) {
         super.fromTag(state, compoundTag)
 
-        val listTag = (compoundTag?.get("tabs") as? ListTag) ?: return
+        val listTag = (compoundTag?.get("tabs") as? NbtList) ?: return
         listTag.forEach { playerTags ->
-            val tabTags = (playerTags as? CompoundTag) ?: return@forEach
+            val tabTags = (playerTags as? NbtCompound) ?: return@forEach
             val playerId = tabTags.getString("id")
 
             selectedTabs[playerId] = hashMapOf()
@@ -123,13 +123,13 @@ class BrainBlockEntity: BlockEntity(ENTITY_TYPE), ExtendedScreenHandlerFactory {
         chunkLoad(compoundTag.getBoolean("chunkLoaded"))
     }
 
-    override fun toTag(tag: CompoundTag): CompoundTag {
+    override fun toTag(tag: NbtCompound): NbtCompound {
         super.toTag(tag)
 
-        val tabsTag = ListTag()
+        val tabsTag = NbtList()
 
         selectedTabs.forEach { playerTabs ->
-            val playerTag = CompoundTag()
+            val playerTag = NbtCompound()
             playerTag.putString("id", playerTabs.key)
             playerTabs.value.forEach {
                 playerTag.putBoolean(it.key.name, it.value)
