@@ -131,9 +131,12 @@ class MessScreenHandler(
         if(!playerEntity.world.isClient) { createNewSlots() }
 
         when(actionType) {
-            SlotActionType.QUICK_MOVE -> transferSlot(playerEntity, index)
-            SlotActionType.PICKUP -> pickup(index, mouseButton, playerEntity)
-            else -> super.onSlotClick(index, mouseButton, actionType, playerEntity)
+            SlotActionType.QUICK_MOVE -> {
+                transferSlot(playerEntity, index)
+                return
+            }
+            SlotActionType.PICKUP -> return pickup(index, mouseButton, playerEntity)
+            else -> return super.onSlotClick(index, mouseButton, actionType, playerEntity)
             // TODO:  Implement custom quickcraft or figure out why its not working
 //            SlotActionType.QUICK_CRAFT -> return quickCraft(index, mouseButton, playerEntity)
         }
@@ -202,8 +205,6 @@ class MessScreenHandler(
         slot.markDirty()
         updateInfo(false)
         owner?.contentChangedByPlayer(player)
-
-        return
     }
 
     fun updateInfo(
