@@ -4,10 +4,9 @@ import com.mojang.blaze3d.systems.RenderSystem
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.color.item.ItemColors
 import net.minecraft.client.font.TextRenderer
-import net.minecraft.client.render.BufferBuilder
-import net.minecraft.client.render.Tessellator
-import net.minecraft.client.render.VertexConsumerProvider
-import net.minecraft.client.render.VertexFormats
+import net.minecraft.client.render.*
+import net.minecraft.client.render.VertexFormat.DrawMode
+import net.minecraft.client.render.item.BuiltinModelItemRenderer
 import net.minecraft.client.render.item.ItemModels
 import net.minecraft.client.render.item.ItemRenderer
 import net.minecraft.client.render.model.BakedModel
@@ -21,28 +20,27 @@ import net.minecraft.item.ItemStack
 import net.minecraft.item.Items
 import net.minecraft.util.math.MathHelper
 import net.minecraft.world.World
-import kotlin.math.max
-import kotlin.math.round
 
 
 class MessScreenItemRenderer(
-        manager: TextureManager?,
-        bakery: BakedModelManager?,
-        colorMap: ItemColors?
-) : ItemRenderer(manager, bakery, colorMap) {
+    manager: TextureManager?,
+    bakery: BakedModelManager?,
+    colorMap: ItemColors?,
+    builtinModelItemRenderer: BuiltinModelItemRenderer?
+) : ItemRenderer(manager, bakery, colorMap, builtinModelItemRenderer) {
 
     override fun getModels(): ItemModels = MinecraftClient.getInstance().itemRenderer.models
-    override fun getHeldItemModel(stack: ItemStack, world: World?, entity: LivingEntity?): BakedModel? {
-        val item = stack.item
+
+    override fun getHeldItemModel(stack: ItemStack?, world: World?, entity: LivingEntity?, seed: Int): BakedModel {
+        val item = stack?.item
         val bakedModel = if (item === Items.TRIDENT) {
             models.modelManager.getModel(ModelIdentifier("minecraft:trident_in_hand#inventory"))
         } else {
             models.getModel(stack)
         }
 
-        val bakedModel3 = bakedModel.overrides.apply(bakedModel, stack, world as? ClientWorld, entity)
-        return bakedModel3 ?: models.modelManager.missingModel
-    }
+        val bakedModel3 = bakedModel.overrides.apply(bakedModel, stack, world as? ClientWorld, entity, seed)
+        return bakedModel3 ?: models.modelManager.missingModel    }
 
     override fun renderGuiItemOverlay(renderer: TextRenderer, stack: ItemStack, x: Int, y: Int, countLabel: String?) {
         if(stack.isEmpty) return
@@ -80,22 +78,17 @@ class MessScreenItemRenderer(
         }
 
         // COPY-PASTA
-        if (stack.isDamaged) {
+        if (stack.isItemBarVisible) {
             RenderSystem.disableDepthTest()
             RenderSystem.disableTexture()
-            RenderSystem.disableAlphaTest()
             RenderSystem.disableBlend()
             val tessellator = Tessellator.getInstance()
             val bufferBuilder = tessellator.buffer
-            val f = stack.damage.toFloat()
-            val g = stack.maxDamage.toFloat()
-            val h = max(0.0f, (g - f) / g)
-            val i = round(13.0f - f * 13.0f / g).toInt()
-            val j = MathHelper.hsvToRgb(h / 3.0f, 1.0f, 1.0f)
+            val i = stack.itemBarStep
+            val j = stack.itemBarColor
             renderGuiQuad(bufferBuilder, x + 2, y + 13, 13, 2, 0, 0, 0, 255)
             renderGuiQuad(bufferBuilder, x + 2, y + 13, i, 1, j shr 16 and 255, j shr 8 and 255, j and 255, 255)
             RenderSystem.enableBlend()
-            RenderSystem.enableAlphaTest()
             RenderSystem.enableTexture()
             RenderSystem.enableDepthTest()
         }
@@ -130,13 +123,23 @@ class MessScreenItemRenderer(
     }
 
     // COPY-PASTA
-    private fun renderGuiQuad(buffer: BufferBuilder, x: Int, y: Int, width: Int, height: Int, red: Int, green: Int, blue: Int,
-                              alpha: Int) {
-        buffer.begin(7, VertexFormats.POSITION_COLOR)
+    private fun renderGuiQuad(buffer: BufferBuilder,
+                              x: Int,
+                              y: Int,
+                              width: Int,
+                              height: Int,
+                              red: Int,
+                              green: Int,
+                              blue: Int,
+                              alpha: Int
+    ) {
+        RenderSystem.setShader { GameRenderer.getPositionColorShader() }
+        buffer.begin(DrawMode.QUADS, VertexFormats.POSITION_COLOR)
         buffer.vertex((x + 0).toDouble(), (y + 0).toDouble(), 0.0).color(red, green, blue, alpha).next()
         buffer.vertex((x + 0).toDouble(), (y + height).toDouble(), 0.0).color(red, green, blue, alpha).next()
         buffer.vertex((x + width).toDouble(), (y + height).toDouble(), 0.0).color(red, green, blue, alpha).next()
         buffer.vertex((x + width).toDouble(), (y + 0).toDouble(), 0.0).color(red, green, blue, alpha).next()
-        Tessellator.getInstance().draw()
+        buffer.end()
+        BufferRenderer.draw(buffer)
     }
 }
