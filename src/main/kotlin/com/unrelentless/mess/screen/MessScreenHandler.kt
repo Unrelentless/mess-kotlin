@@ -78,7 +78,7 @@ class MessScreenHandler(
             playerInventory
     ) {
         val sizes = buf.readIntArray()
-        val inventories = (buf.readNbtCompound()?.get("items") as NbtList)
+        val inventories = (buf.readNbt()?.get("items") as NbtList)
                 .mapIndexedNotNull { index, tag ->
                     val inv = LimbInventory(Level.values().find { it.size == sizes[index] }!!, null)
                     inv.depositStack((tag as NbtCompound).deserializeInnerStack() ?: ItemStack.EMPTY)
@@ -126,13 +126,13 @@ class MessScreenHandler(
         }
 
     override fun canUse(player: PlayerEntity?): Boolean = true
-    override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity): ItemStack {
-        if(index == -1) return ItemStack.EMPTY
+    override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity) {
+        if(index == -1) return// ItemStack.EMPTY
         if(!playerEntity.world.isClient) { createNewSlots() }
 
         when(actionType) {
-            SlotActionType.QUICK_MOVE -> return transferSlot(playerEntity, index)
-            SlotActionType.PICKUP -> return pickup(index, mouseButton, playerEntity)
+            SlotActionType.QUICK_MOVE -> transferSlot(playerEntity, index)
+            SlotActionType.PICKUP -> pickup(index, mouseButton, playerEntity)
             else -> super.onSlotClick(index, mouseButton, actionType, playerEntity)
             // TODO:  Implement custom quickcraft or figure out why its not working
 //            SlotActionType.QUICK_CRAFT -> return quickCraft(index, mouseButton, playerEntity)
@@ -155,7 +155,7 @@ class MessScreenHandler(
             insertItem(itemStackCopy, limbsToDisplay.size, this.slots.size, true)
             slotStack.decrement(count)
         } else {
-            val limbWithItems = tabbedLimbs.filter { canStacksCombine(slotStack, it.getStack()) }
+            val limbWithItems = tabbedLimbs.filter { ItemStack.canCombine(slotStack, it.getStack()) }
             val iterator = limbWithItems.iterator()
 
             // Fill in inventories that already have items
@@ -177,34 +177,33 @@ class MessScreenHandler(
         return ItemStack.EMPTY
     }
 
-    private fun pickup(index: Int, mouseButton: Int, player: PlayerEntity): ItemStack {
+    private fun pickup(index: Int, mouseButton: Int, player: PlayerEntity) {
 
         // Click outside window
         if (index == -999) {
-            val count = if(mouseButton == 0) playerInventory.cursorStack.count else 1
-            player.dropItem(playerInventory.cursorStack.split(count), true)
-            return ItemStack.EMPTY
+            val count = if(mouseButton == 0) cursorStack.count else 1
+            player.dropItem(cursorStack.split(count), true)
+            return
         }
 
         val slot = slots[index]
         val slotStack = slot.stack
-        val cursorStack = player.inventory.cursorStack
 
         if(index < limbsToDisplay.size) {
             if(!cursorStack.isEmpty) {
-                val count = if(mouseButton == 0) playerInventory.cursorStack.count else 1
+                val count = if(mouseButton == 0) cursorStack.count else 1
                 ((slot.inventory) as LimbInventory).depositStack(cursorStack, count)
             } else {
                 val count = min(slotStack.item.maxCount, slotStack.count) / (mouseButton + 1)
-                player.inventory.cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
+                cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
             }
-        } else return super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, player)
+        } else super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, player)
 
         slot.markDirty()
         updateInfo(false)
         owner?.contentChangedByPlayer(player)
 
-        return ItemStack.EMPTY
+        return
     }
 
     fun updateInfo(
