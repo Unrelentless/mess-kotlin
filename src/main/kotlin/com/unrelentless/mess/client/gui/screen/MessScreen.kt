@@ -9,7 +9,6 @@ import com.unrelentless.mess.util.Clientside
 import com.unrelentless.mess.util.Level
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry
 import net.minecraft.client.MinecraftClient
-import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen
 import net.minecraft.client.gui.screen.ingame.HandledScreen
 import net.minecraft.client.gui.widget.TextFieldWidget
 import net.minecraft.client.render.GameRenderer
@@ -92,7 +91,7 @@ class MessScreen(
 
         searchBox.setMaxLength(50)
         searchBox.setDrawsBackground(false)
-        searchBox.isVisible = false
+        searchBox.isVisible = true
         searchBox.setEditableColor(16777215)
         addSelectableChild(searchBox)
 
