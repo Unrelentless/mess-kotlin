@@ -9,8 +9,10 @@ import com.unrelentless.mess.util.Clientside
 import com.unrelentless.mess.util.Level
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry
 import net.minecraft.client.MinecraftClient
+import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen
 import net.minecraft.client.gui.screen.ingame.HandledScreen
 import net.minecraft.client.gui.widget.TextFieldWidget
+import net.minecraft.client.render.GameRenderer
 import net.minecraft.client.render.item.BuiltinModelItemRenderer
 import net.minecraft.client.util.InputUtil
 import net.minecraft.client.util.math.MatrixStack
@@ -118,7 +120,10 @@ class MessScreen(
 
     override fun drawBackground(matrices: MatrixStack, delta: Float, mouseX: Int, mouseY: Int) {
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f)
-        client?.textureManager?.bindTexture(TEXTURE)
+
+        RenderSystem.setShader { GameRenderer.getPositionTexShader() }
+        RenderSystem.setShaderTexture(0, TEXTURE)
+
         val originX = (width - backgroundWidth) / 2
         val originY = (height - backgroundHeight) / 2
 
@@ -219,7 +224,8 @@ class MessScreen(
     }
 
     private fun drawSlots(matrices: MatrixStack) {
-        client?.textureManager?.bindTexture(TEXTURE_ETC)
+        RenderSystem.setShader { GameRenderer.getPositionTexShader() }
+        RenderSystem.setShaderTexture(0, TEXTURE_ETC)
 
         val xPos = x + 8
         val yPos = y + 17
@@ -245,7 +251,7 @@ class MessScreen(
                 if(index < handler.limbsToDisplay.size) {
                     val level = handler.limbsToDisplay[index].level
 
-                    RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f)
+                    RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 0.25f)
                     RenderSystem.enableBlend()
 
                     drawTexture(
@@ -266,7 +272,8 @@ class MessScreen(
     }
 
     private fun drawTabs(matrices: MatrixStack) {
-        client?.textureManager?.bindTexture(TEXTURE_ETC)
+        RenderSystem.setShader { GameRenderer.getPositionTexShader() }
+        RenderSystem.setShaderTexture(0, TEXTURE_ETC)
 
         val xPos = x + backgroundWidth
 
@@ -288,9 +295,10 @@ class MessScreen(
     }
     private fun drawTabIcons(matrices: MatrixStack) {
         val xPos = x + backgroundWidth
-        val scale = 0.8f
+        val scale = 0.75f
         itemRenderer.zOffset = 100.0f
 
+        RenderSystem.disableBlend()
         matrices.push()
         matrices.scale(scale, scale, 1.0f)
 
@@ -299,12 +307,13 @@ class MessScreen(
             val itemStack = ItemStack(level.block, 1)
             val levelStringWidth = textRenderer.getWidth(level.name)
 
-            itemRenderer.renderInGuiWithOverrides(itemStack, ((xPos + 6) / scale).toInt(), ((yPos + 4) / scale).toInt())
-            itemRenderer.renderGuiItemOverlay(textRenderer, itemStack, ((xPos + 6) / scale).toInt(), ((yPos + 4) / scale).toInt())
+            itemRenderer.renderInGuiWithOverrides(itemStack, xPos + 3, yPos + 3)
+            itemRenderer.renderGuiItemOverlay(textRenderer, itemStack, xPos + 3, yPos + 3)
             textRenderer.draw(matrices, level.name, (xPos + 14 - levelStringWidth/2) / scale, (yPos + 18) / scale, 4210752)
         }
 
         matrices.pop()
+        RenderSystem.enableBlend()
 
         itemRenderer.zOffset = 0.0f
     }
@@ -312,7 +321,8 @@ class MessScreen(
     private fun drawScrollbar(matrices: MatrixStack) {
         val xPos = x + backgroundWidth
 
-        client?.textureManager?.bindTexture(TEXTURE_ETC)
+        RenderSystem.setShader { GameRenderer.getPositionTexShader() }
+        RenderSystem.setShaderTexture(0, TEXTURE_ETC)
         drawTexture(
                 matrices,
                 xPos - 20,
