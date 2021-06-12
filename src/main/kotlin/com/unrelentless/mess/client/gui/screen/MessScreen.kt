@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gui.screen.ingame.HandledScreen
 import net.minecraft.client.gui.widget.TextFieldWidget
+import net.minecraft.client.render.item.BuiltinModelItemRenderer
 import net.minecraft.client.util.InputUtil
 import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.entity.player.PlayerInventory
@@ -67,18 +68,16 @@ class MessScreen(
         playerInventoryTitleX = super.playerInventoryTitleX
     }
 
-    override fun init(client: MinecraftClient, width: Int, height: Int) {
-        super.init(client, width, height)
-        itemRenderer = MessScreenItemRenderer(
-                client.textureManager,
-                client.bakedModelManager,
-                (client as MinecraftClientMixin).itemColors
-        )
-    }
-
     override fun init() {
         super.init()
         client?.keyboard?.setRepeatEvents(true)
+
+        itemRenderer = MessScreenItemRenderer(
+            MinecraftClient.getInstance().textureManager,
+            MinecraftClient.getInstance().bakedModelManager,
+            (client as MinecraftClientMixin).itemColors,
+            BuiltinModelItemRenderer(MinecraftClient.getInstance().blockEntityRenderDispatcher, MinecraftClient.getInstance().entityModelLoader)
+        )
 
         searchBox = TextFieldWidget(
                 textRenderer,
@@ -90,12 +89,11 @@ class MessScreen(
         )
 
         searchBox.setMaxLength(50)
-        searchBox.setHasBorder(false)
+        searchBox.setDrawsBackground(false)
+        searchBox.isVisible = false
         searchBox.setEditableColor(16777215)
-        searchBox.isVisible = true
-        searchBox.setFocusUnlocked(false)
-        searchBox.setSelected(true)
-        children.add(searchBox)
+        addSelectableChild(searchBox)
+
         searchBox.text = handler.searchString
         scrollPosition = handler.scrollPosition
 
@@ -111,7 +109,7 @@ class MessScreen(
         textRenderer.draw(matrices, title, titleX.toFloat(), titleY.toFloat(), 4210752)
         textRenderer.draw(
                 matrices,
-                playerInventory.displayName,
+                playerInventoryTitle,
                 playerInventoryTitleX.toFloat(),
                 playerInventoryTitleY.toFloat() + 38,
                 4210752
@@ -119,7 +117,7 @@ class MessScreen(
     }
 
     override fun drawBackground(matrices: MatrixStack, delta: Float, mouseX: Int, mouseY: Int) {
-        RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f)
+        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f)
         client?.textureManager?.bindTexture(TEXTURE)
         val originX = (width - backgroundWidth) / 2
         val originY = (height - backgroundHeight) / 2
@@ -203,8 +201,7 @@ class MessScreen(
     override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
         ignoreTypedCharacter = false
 
-        val keyPresent = InputUtil.fromKeyCode(keyCode, scanCode).method_30103().isPresent
-
+        val keyPresent = InputUtil.fromKeyCode(keyCode, scanCode).toInt().isPresent
         if (focusedSlot?.hasStack() == true && keyPresent && handleHotbarKeyPressed(keyCode, scanCode)) {
             ignoreTypedCharacter = true
 
@@ -248,7 +245,7 @@ class MessScreen(
                 if(index < handler.limbsToDisplay.size) {
                     val level = handler.limbsToDisplay[index].level
 
-                    RenderSystem.color4f(1.0f, 1.0f, 1.0f, 0.25f)
+                    RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f)
                     RenderSystem.enableBlend()
 
                     drawTexture(
@@ -262,7 +259,7 @@ class MessScreen(
                     )
 
                     RenderSystem.disableBlend()
-                    RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f)
+                    RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f)
                 }
             }
         }
@@ -294,8 +291,8 @@ class MessScreen(
         val scale = 0.8f
         itemRenderer.zOffset = 100.0f
 
-        RenderSystem.pushMatrix()
-        RenderSystem.scalef(scale, scale, 1.0f)
+        matrices.push()
+        matrices.scale(scale, scale, 1.0f)
 
         for(level in handler.selectedTabs.keys) {
             val yPos = y + 18 + (level.displayIndex * 29)
@@ -307,7 +304,7 @@ class MessScreen(
             textRenderer.draw(matrices, level.name, (xPos + 14 - levelStringWidth/2) / scale, (yPos + 18) / scale, 4210752)
         }
 
-        RenderSystem.popMatrix()
+        matrices.pop()
 
         itemRenderer.zOffset = 0.0f
     }

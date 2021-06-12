@@ -8,6 +8,8 @@ import com.unrelentless.mess.block.entity.LimbBlockEntity
 import com.unrelentless.mess.block.entity.LowLimbBlockEntity
 import com.unrelentless.mess.block.entity.MidLimbBlockEntity
 import net.minecraft.block.Block
+import net.minecraft.block.BlockState
+import net.minecraft.util.math.BlockPos
 
 enum class Level {
     LOW, MID, HIGH;
@@ -19,12 +21,14 @@ enum class Level {
             HIGH -> 4096
         }
 
-    val blockEntity: LimbBlockEntity
-        get() = when(this) {
-            LOW -> LowLimbBlockEntity()
-            MID -> MidLimbBlockEntity()
-            HIGH -> HighLimbBlockEntity()
+    fun blockEntity(pos: BlockPos?, state: BlockState?): LimbBlockEntity {
+        return when(this) {
+            LOW -> LowLimbBlockEntity(pos, state)
+            MID -> MidLimbBlockEntity(pos, state)
+            HIGH -> HighLimbBlockEntity(pos, state)
         }
+    }
+
 
     val block: Block
         get() = when(this) {

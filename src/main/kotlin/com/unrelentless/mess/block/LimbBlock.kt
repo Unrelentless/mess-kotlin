@@ -32,7 +32,7 @@ import kotlin.math.min
 
 open class LimbBlock(settings: FabricBlockSettings, private val level: Level): BlockWithEntity(settings.nonOpaque()) {
 
-    override fun createBlockEntity(pos: BlockPos?, state: BlockState?): BlockEntity? = level.blockEntity
+    override fun createBlockEntity(pos: BlockPos?, state: BlockState?): BlockEntity? = level.blockEntity(pos, state)
     override fun getRenderType(state: BlockState?): BlockRenderType = BlockRenderType.MODEL
 
     override fun onUse(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity, hand: Hand, hit: BlockHitResult): ActionResult {

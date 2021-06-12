@@ -9,8 +9,6 @@ import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher
 import net.minecraft.client.render.block.entity.BlockEntityRenderer
 import net.minecraft.client.render.model.json.ModelTransformation
 import net.minecraft.client.util.math.MatrixStack
-import net.minecraft.client.util.math.Vector3d
-import net.minecraft.client.util.math.Vector3f
 import kotlin.math.sin
 import kotlin.random.Random
 
