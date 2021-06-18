@@ -9,8 +9,11 @@ import com.unrelentless.mess.screen.slot.LimbSlot
 import com.unrelentless.mess.extensions.deserializeInnerStack
 import com.unrelentless.mess.inventory.LimbInventory
 import io.netty.buffer.Unpooled
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.fabricmc.fabric.api.network.ClientSidePacketRegistry
 import net.fabricmc.fabric.api.network.ServerSidePacketRegistry
+import net.fabricmc.fabric.api.networking.v1.PacketSender
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
 import net.minecraft.block.BlockState
 import net.minecraft.entity.player.PlayerEntity
@@ -23,6 +26,9 @@ import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.ScreenHandlerType
 import net.minecraft.screen.slot.Slot
 import net.minecraft.screen.slot.SlotActionType
+import net.minecraft.server.MinecraftServer
+import net.minecraft.server.network.ServerPlayNetworkHandler
+import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.World
@@ -53,23 +59,40 @@ class MessScreenHandler(
         }
 
         init {
-            ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
-                val scrollPosition = buffer.readFloat()
-                val searchString = buffer.readString(Short.MAX_VALUE.toInt())
+            ServerPlayNetworking.registerGlobalReceiver(C2S_IDENTIFIER) { minecraftServer, serverPlayerEntity, _, packetByteBuf, _ ->
+                val scrollPosition = packetByteBuf.readFloat()
+                val searchString = packetByteBuf.readString(Short.MAX_VALUE.toInt())
                 val tabs: Map<Level, Boolean> = Level.values().map {
-                    Pair(buffer.readEnumConstant(Level::class.java), buffer.readBoolean())
+                    Pair(packetByteBuf.readEnumConstant(Level::class.java), packetByteBuf.readBoolean())
                 }.toMap()
 
-                context.taskQueue.execute {
-                    val handler = context.player.currentScreenHandler as? MessScreenHandler ?: return@execute
+                minecraftServer.execute {
+                    val handler = serverPlayerEntity.currentScreenHandler as? MessScreenHandler ?: return@execute
 
                     for(tab in tabs) { handler.selectedTabs[tab.key] = tab.value }
                     handler.updateInfo(false, searchString, scrollPosition)
-                    handler.owner?.updateTabs(handler.selectedTabs, context.player)
-                    handler.owner?.updateSearchString(handler.searchString, context.player)
-                    handler.owner?.updateScrollPosition(handler.scrollPosition, context.player)
+                    handler.owner?.updateTabs(handler.selectedTabs, serverPlayerEntity)
+                    handler.owner?.updateSearchString(handler.searchString, serverPlayerEntity)
+                    handler.owner?.updateScrollPosition(handler.scrollPosition, serverPlayerEntity)
                 }
             }
+//            ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
+//                val scrollPosition = buffer.readFloat()
+//                val searchString = buffer.readString(Short.MAX_VALUE.toInt())
+//                val tabs: Map<Level, Boolean> = Level.values().map {
+//                    Pair(buffer.readEnumConstant(Level::class.java), buffer.readBoolean())
+//                }.toMap()
+//
+//                context.taskQueue.execute {
+//                    val handler = context.player.currentScreenHandler as? MessScreenHandler ?: return@execute
+//
+//                    for(tab in tabs) { handler.selectedTabs[tab.key] = tab.value }
+//                    handler.updateInfo(false, searchString, scrollPosition)
+//                    handler.owner?.updateTabs(handler.selectedTabs, context.player)
+//                    handler.owner?.updateSearchString(handler.searchString, context.player)
+//                    handler.owner?.updateScrollPosition(handler.scrollPosition, context.player)
+//                }
+//            }
         }
     }
 
@@ -181,7 +204,6 @@ class MessScreenHandler(
     }
 
     private fun pickup(index: Int, mouseButton: Int, player: PlayerEntity) {
-
         // Click outside window
         if (index == -999) {
             val count = if(mouseButton == 0) cursorStack.count else 1
@@ -248,6 +270,9 @@ class MessScreenHandler(
     private fun createNewSlots() {
         slots.clear()
 
+        println(slots.count())
+        println(limbsToDisplay.count())
+
         // Magic numbers
         val xOffset = 9
         val yOffsetInv = 18
@@ -281,6 +306,8 @@ class MessScreenHandler(
         for(row in 0 until 9) {
             addSlot(Slot(playerInventory, row, xOffset + row * 18, yOffsetPlayerHotbar))
         }
+
+        println(slots.count())
     }
 
     private fun syncToServer() {
@@ -295,6 +322,7 @@ class MessScreenHandler(
             buffer.writeBoolean(it.value)
         }
 
-        ClientSidePacketRegistry.INSTANCE.sendToServer(C2S_IDENTIFIER, buffer)
+//        ClientSidePacketRegistry.INSTANCE.sendToServer(C2S_IDENTIFIER, buffer)
+        ClientPlayNetworking.send(C2S_IDENTIFIER, buffer);
     }
 }
