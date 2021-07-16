@@ -70,10 +70,10 @@ class MessScreenHandler(
                     val handler = serverPlayerEntity.currentScreenHandler as? MessScreenHandler ?: return@execute
 
                     for(tab in tabs) { handler.selectedTabs[tab.key] = tab.value }
-                    handler.updateInfo(false, searchString, scrollPosition)
                     handler.owner?.updateTabs(handler.selectedTabs, serverPlayerEntity)
                     handler.owner?.updateSearchString(handler.searchString, serverPlayerEntity)
                     handler.owner?.updateScrollPosition(handler.scrollPosition, serverPlayerEntity)
+                    handler.updateInfo(false, searchString, scrollPosition)
                 }
             }
 //            ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
@@ -163,8 +163,6 @@ class MessScreenHandler(
             // TODO:  Implement custom quickcraft or figure out why its not working
 //            SlotActionType.QUICK_CRAFT -> return quickCraft(index, mouseButton, playerEntity)
         }
-
-        return super.onSlotClick(index, mouseButton, actionType, playerEntity)
     }
 
     override fun transferSlot(player: PlayerEntity, index: Int): ItemStack {
@@ -218,7 +216,7 @@ class MessScreenHandler(
             if(!cursorStack.isEmpty) {
                 val count = if(mouseButton == 0) cursorStack.count else 1
                 ((slot.inventory) as LimbInventory).depositStack(cursorStack, count)
-            } else {
+            } else if(!slotStack.isEmpty) {
                 val count = min(slotStack.item.maxCount, slotStack.count) / (mouseButton + 1)
                 cursorStack = ((slot.inventory) as LimbInventory).withdrawStack(count)
             }
