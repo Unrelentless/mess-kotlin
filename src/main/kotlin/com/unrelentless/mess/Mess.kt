@@ -9,6 +9,7 @@ import com.unrelentless.mess.block.entity.LowLimbBlockEntity
 import com.unrelentless.mess.block.entity.MidLimbBlockEntity
 import com.unrelentless.mess.client.gui.screen.MessScreen
 import com.unrelentless.mess.item.EnderLinkItem
+import com.unrelentless.mess.screen.MessScreenHandler
 import com.unrelentless.mess.util.Clientside
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.api.ModInitializer
@@ -46,7 +47,10 @@ class Mess : ModInitializer, ClientModInitializer {
         }
     }
 
-    override fun onInitialize() {}
+    override fun onInitialize() {
+        MessScreenHandler.registerNetworkingPacket()
+    }
+
     override fun onInitializeClient() {
         listOf(BLOCKS, ITEMS, ENTITIES, SCREENS)
                 .flatten()

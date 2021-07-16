@@ -58,15 +58,20 @@ class MessScreenHandler(
             }
         }
 
-        init {
+        fun registerNetworkingPacket() {
+            println("Registering Networking?")
+
             ServerPlayNetworking.registerGlobalReceiver(C2S_IDENTIFIER) { minecraftServer, serverPlayerEntity, _, packetByteBuf, _ ->
+                println("Networking?")
                 val scrollPosition = packetByteBuf.readFloat()
                 val searchString = packetByteBuf.readString(Short.MAX_VALUE.toInt())
-                val tabs: Map<Level, Boolean> = Level.values().map {
+                val tabs: Map<Level, Boolean> = Level.values().associate {
                     Pair(packetByteBuf.readEnumConstant(Level::class.java), packetByteBuf.readBoolean())
-                }.toMap()
+                }
 
                 minecraftServer.execute {
+                    println("Networking main thread?")
+
                     val handler = serverPlayerEntity.currentScreenHandler as? MessScreenHandler ?: return@execute
 
                     for(tab in tabs) { handler.selectedTabs[tab.key] = tab.value }
@@ -74,8 +79,12 @@ class MessScreenHandler(
                     handler.owner?.updateSearchString(handler.searchString, serverPlayerEntity)
                     handler.owner?.updateScrollPosition(handler.scrollPosition, serverPlayerEntity)
                     handler.updateInfo(false, searchString, scrollPosition)
+                    handler.createNewSlots()
                 }
             }
+        }
+
+        init {
 //            ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
 //                val scrollPosition = buffer.readFloat()
 //                val searchString = buffer.readString(Short.MAX_VALUE.toInt())
@@ -150,6 +159,7 @@ class MessScreenHandler(
 
     override fun canUse(player: PlayerEntity?): Boolean = true
     override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity) {
+        println("ON SLOT CLICK")
         if(index == -1) return// ItemStack.EMPTY
         if(!playerEntity.world.isClient) { createNewSlots() }
 
@@ -265,11 +275,11 @@ class MessScreenHandler(
                 }
     }
 
-    private fun createNewSlots() {
+    public fun createNewSlots() {
         slots.clear()
 
-        println(slots.count())
-        println(limbsToDisplay.count())
+        println("SLOTS: " + slots.count())
+        println("LIMBS:" + limbsToDisplay.count())
 
         // Magic numbers
         val xOffset = 9
@@ -305,7 +315,7 @@ class MessScreenHandler(
             addSlot(Slot(playerInventory, row, xOffset + row * 18, yOffsetPlayerHotbar))
         }
 
-        println(slots.count())
+        println("SLOTS AFTER: " + slots.count())
     }
 
     private fun syncToServer() {
