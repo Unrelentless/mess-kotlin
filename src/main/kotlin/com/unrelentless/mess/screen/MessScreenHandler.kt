@@ -79,26 +79,6 @@ class MessScreenHandler(
                 }
             }
         }
-
-        init {
-//            ServerSidePacketRegistry.INSTANCE.register(C2S_IDENTIFIER) { context, buffer ->
-//                val scrollPosition = buffer.readFloat()
-//                val searchString = buffer.readString(Short.MAX_VALUE.toInt())
-//                val tabs: Map<Level, Boolean> = Level.values().map {
-//                    Pair(buffer.readEnumConstant(Level::class.java), buffer.readBoolean())
-//                }.toMap()
-//
-//                context.taskQueue.execute {
-//                    val handler = context.player.currentScreenHandler as? MessScreenHandler ?: return@execute
-//
-//                    for(tab in tabs) { handler.selectedTabs[tab.key] = tab.value }
-//                    handler.updateInfo(false, searchString, scrollPosition)
-//                    handler.owner?.updateTabs(handler.selectedTabs, context.player)
-//                    handler.owner?.updateSearchString(handler.searchString, context.player)
-//                    handler.owner?.updateScrollPosition(handler.scrollPosition, context.player)
-//                }
-//            }
-        }
     }
 
     constructor(syncId: Int, playerInventory: PlayerInventory, buf: PacketByteBuf): this(
@@ -125,7 +105,7 @@ class MessScreenHandler(
         scrollPosition = buf.readFloat()
         searchString = buf.readString()
     }
-
+    
     val selectedTabs: HashMap<Level, Boolean> = hashMapOf(
             Pair(Level.LOW, true),
             Pair(Level.MID, true),
@@ -153,6 +133,7 @@ class MessScreenHandler(
             return (numberOfPositions * scrollPosition + 0.5).toInt()
         }
 
+    override fun sendContentUpdates() { }
     override fun canUse(player: PlayerEntity?): Boolean = true
     override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity) {
         if(index == -1) return// ItemStack.EMPTY
