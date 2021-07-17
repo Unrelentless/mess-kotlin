@@ -59,10 +59,7 @@ class MessScreenHandler(
         }
 
         fun registerNetworkingPacket() {
-            println("Registering Networking?")
-
             ServerPlayNetworking.registerGlobalReceiver(C2S_IDENTIFIER) { minecraftServer, serverPlayerEntity, _, packetByteBuf, _ ->
-                println("Networking?")
                 val scrollPosition = packetByteBuf.readFloat()
                 val searchString = packetByteBuf.readString(Short.MAX_VALUE.toInt())
                 val tabs: Map<Level, Boolean> = Level.values().associate {
@@ -70,8 +67,7 @@ class MessScreenHandler(
                 }
 
                 minecraftServer.execute {
-                    println("Networking main thread?")
-
+                    println("Networking main.")
                     val handler = serverPlayerEntity.currentScreenHandler as? MessScreenHandler ?: return@execute
 
                     for(tab in tabs) { handler.selectedTabs[tab.key] = tab.value }
@@ -159,9 +155,10 @@ class MessScreenHandler(
 
     override fun canUse(player: PlayerEntity?): Boolean = true
     override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity) {
-        println("ON SLOT CLICK")
         if(index == -1) return// ItemStack.EMPTY
-        if(!playerEntity.world.isClient) { createNewSlots() }
+//        if(!playerEntity.world.isClient) { createNewSlots() }
+
+        println("ON SLOT CLICK")
 
         when(actionType) {
             SlotActionType.QUICK_MOVE -> {
@@ -219,6 +216,8 @@ class MessScreenHandler(
             return
         }
 
+        if(!slots[index].hasStack() && cursorStack.isEmpty) return
+
         val slot = slots[index]
         val slotStack = slot.stack
 
@@ -273,6 +272,8 @@ class MessScreenHandler(
                     val max = min(limbs.size, MessScreen.INV_SIZE + min)
                     (min until max).contains(index)
                 }
+
+        limbs.map { println(it.getStack()) }
     }
 
     public fun createNewSlots() {

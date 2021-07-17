@@ -42,7 +42,7 @@ class MessScreen(
 
     private var scrolling = false
         set(newValue) {
-            if(!newValue) { updateHandler() }
+            if(field != newValue) { updateHandler() }
             field = newValue
         }
     private var scrolledRows = 0

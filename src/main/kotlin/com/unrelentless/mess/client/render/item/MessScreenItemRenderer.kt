@@ -30,17 +30,17 @@ class MessScreenItemRenderer(
 ) : ItemRenderer(manager, bakery, colorMap, builtinModelItemRenderer) {
 
     override fun getModels(): ItemModels = MinecraftClient.getInstance().itemRenderer.models
-
     override fun getHeldItemModel(stack: ItemStack?, world: World?, entity: LivingEntity?, seed: Int): BakedModel {
-        val item = stack?.item
-        val bakedModel = if (item === Items.TRIDENT) {
-            models.modelManager.getModel(ModelIdentifier("minecraft:trident_in_hand#inventory"))
-        } else {
-            models.getModel(stack)
+        val bakedModel3: BakedModel = when {
+            stack!!.isOf(Items.TRIDENT) ->  models.modelManager.getModel(ModelIdentifier("minecraft:trident_in_hand#inventory"))
+            stack.isOf(Items.SPYGLASS) -> models.modelManager.getModel(ModelIdentifier("minecraft:spyglass_in_hand#inventory"))
+            else ->  models.getModel(stack)
         }
 
-        val bakedModel3 = bakedModel.overrides.apply(bakedModel, stack, world as? ClientWorld, entity, seed)
-        return bakedModel3 ?: models.modelManager.missingModel    }
+        val clientWorld = if (world is ClientWorld) world else null
+        val bakedModel4 = bakedModel3.overrides.apply(bakedModel3, stack, clientWorld, entity, seed)
+        return bakedModel4 ?: models.modelManager.missingModel
+    }
 
     override fun renderGuiItemOverlay(renderer: TextRenderer, stack: ItemStack, x: Int, y: Int, countLabel: String?) {
         if(stack.isEmpty) return
