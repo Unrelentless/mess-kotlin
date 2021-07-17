@@ -144,44 +144,6 @@ class BrainBlockEntity(pos: BlockPos?, state: BlockState?) : BlockEntity(ENTITY_
         return nbt!!
     }
 
-//    override fun fromTag(state: BlockState?, compoundTag: NbtCompound?) {
-//        super.fromTag(state, compoundTag)
-//
-//        val listTag = (compoundTag?.get("tabs") as? NbtList) ?: return
-//        listTag.forEach { playerTags ->
-//            val tabTags = (playerTags as? NbtCompound) ?: return@forEach
-//            val playerId = tabTags.getString("id")
-//
-//            selectedTabs[playerId] = hashMapOf()
-//            Level.values().forEach {
-//                selectedTabs[playerId]?.set(it, tabTags.getBoolean(it.name))
-//            }
-//        }
-//
-//        chunkLoad(compoundTag.getBoolean("chunkLoaded"))
-//    }
-
-//    override fun toTag(tag: NbtCompound): NbtCompound {
-//        super.toTag(tag)
-//
-//        val tabsTag = NbtList()
-//
-//        selectedTabs.forEach { playerTabs ->
-//            val playerTag = NbtCompound()
-//            playerTag.putString("id", playerTabs.key)
-//            playerTabs.value.forEach {
-//                playerTag.putBoolean(it.key.name, it.value)
-//            }
-//
-//            tabsTag.add(playerTag)
-//        }
-//
-//        tag.put("tabs", tabsTag)
-//        tag.putBoolean("chunkLoaded", chunkLoaded)
-//
-//        return tag
-//    }
-
     fun onPlaced() = findLimbs(world as World, pos).forEach{ it.addBrain(this) }
     fun onBroken() = findLimbs(world as World, pos).forEach{ it.removeBrain(this) }
     fun updateBrains() = limbs.forEach(LimbBlockEntity::findBrains)

@@ -66,15 +66,6 @@ open class LimbBlockEntity(
         return super.writeNbt(nbt?.serializeLimb(inventory))
     }
 
-//    override fun fromTag(state: BlockState?, tag: NbtCompound){
-//        super.fromTag(state, tag.deserializeLimb(inventory))
-//        chunkLoad(tag.getBoolean("chunkLoaded"))
-//    }
-//    override fun toTag(tag: NbtCompound): NbtCompound {
-//        tag.putBoolean("chunkLoaded", chunkLoaded)
-//        return super.toTag(tag.serializeLimb(inventory))
-//    }
-
     override fun getInventory(state: BlockState?, world: WorldAccess?, pos: BlockPos?): SidedInventory = inventory
 
     fun onContentChanged(player: PlayerEntity? = null) = linkedBrains.forEach { it.contentChanged(player) }
