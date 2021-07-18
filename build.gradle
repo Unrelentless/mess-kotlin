@@ -85,5 +85,5 @@ publishing {
     }
 }
 
-compileKotlin.kotlinOptions.jvmTarget = "16"
+compileKotlin.kotlinOptions.jvmTarget = "14"
 compileKotlin.kotlinOptions.languageVersion = "1.4"
