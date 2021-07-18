@@ -142,11 +142,13 @@ class MessScreen(
     }
 
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
-        if(button != 0 || !isClickInScrollbar(mouseX, mouseY)) return super.mouseClicked(mouseX, mouseY, button)
+        if(isClickInScrollbar(mouseX, mouseY)){
+            scrolling = hasScrollbar()
+            return true
+        }
         if(isClickInTab(mouseX, mouseY) != null) return true
-        scrolling = hasScrollbar()
 
-        return true
+        return super.mouseClicked(mouseX, mouseY, button)
     }
 
     override fun mouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean {

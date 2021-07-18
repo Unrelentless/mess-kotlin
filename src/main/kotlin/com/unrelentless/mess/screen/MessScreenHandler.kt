@@ -67,7 +67,6 @@ class MessScreenHandler(
                 }
 
                 minecraftServer.execute {
-                    println("Networking main.")
                     val handler = serverPlayerEntity.currentScreenHandler as? MessScreenHandler ?: return@execute
 
                     for(tab in tabs) { handler.selectedTabs[tab.key] = tab.value }
@@ -105,7 +104,7 @@ class MessScreenHandler(
         scrollPosition = buf.readFloat()
         searchString = buf.readString()
     }
-    
+
     val selectedTabs: HashMap<Level, Boolean> = hashMapOf(
             Pair(Level.LOW, true),
             Pair(Level.MID, true),
@@ -136,18 +135,12 @@ class MessScreenHandler(
     override fun sendContentUpdates() { }
     override fun canUse(player: PlayerEntity?): Boolean = true
     override fun onSlotClick(index: Int, mouseButton: Int, actionType: SlotActionType, playerEntity: PlayerEntity) {
-        if(index == -1) return// ItemStack.EMPTY
-//        if(!playerEntity.world.isClient) { createNewSlots() }
-
-        println("ON SLOT CLICK")
+        if(index == -1) return
 
         when(actionType) {
-            SlotActionType.QUICK_MOVE -> {
-                transferSlot(playerEntity, index)
-                return
-            }
-            SlotActionType.PICKUP -> return pickup(index, mouseButton, playerEntity)
-            else -> return super.onSlotClick(index, mouseButton, actionType, playerEntity)
+            SlotActionType.QUICK_MOVE -> transferSlot(playerEntity, index)
+            SlotActionType.PICKUP -> pickup(index, mouseButton, playerEntity)
+            else -> super.onSlotClick(index, mouseButton, actionType, playerEntity)
             // TODO:  Implement custom quickcraft or figure out why its not working
 //            SlotActionType.QUICK_CRAFT -> return quickCraft(index, mouseButton, playerEntity)
         }
@@ -183,7 +176,6 @@ class MessScreenHandler(
         }
 
         slot.markDirty()
-        updateInfo(false)
         owner?.contentChangedByPlayer(player)
 
         return ItemStack.EMPTY
@@ -213,7 +205,6 @@ class MessScreenHandler(
         } else super.onSlotClick(index, mouseButton, SlotActionType.PICKUP, player)
 
         slot.markDirty()
-        updateInfo(false)
         owner?.contentChangedByPlayer(player)
     }
 
@@ -253,15 +244,10 @@ class MessScreenHandler(
                     val max = min(limbs.size, MessScreen.INV_SIZE + min)
                     (min until max).contains(index)
                 }
-
-        limbs.map { println(it.getStack()) }
     }
 
     public fun createNewSlots() {
         slots.clear()
-
-        println("SLOTS: " + slots.count())
-        println("LIMBS:" + limbsToDisplay.count())
 
         // Magic numbers
         val xOffset = 9
@@ -296,8 +282,6 @@ class MessScreenHandler(
         for(row in 0 until 9) {
             addSlot(Slot(playerInventory, row, xOffset + row * 18, yOffsetPlayerHotbar))
         }
-
-        println("SLOTS AFTER: " + slots.count())
     }
 
     private fun syncToServer() {
@@ -312,7 +296,6 @@ class MessScreenHandler(
             buffer.writeBoolean(it.value)
         }
 
-//        ClientSidePacketRegistry.INSTANCE.sendToServer(C2S_IDENTIFIER, buffer)
         ClientPlayNetworking.send(C2S_IDENTIFIER, buffer);
     }
 }
