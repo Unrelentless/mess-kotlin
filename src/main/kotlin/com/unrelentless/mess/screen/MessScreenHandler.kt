@@ -16,6 +16,7 @@ import net.fabricmc.fabric.api.networking.v1.PacketSender
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
 import net.minecraft.block.BlockState
+import net.minecraft.client.item.TooltipContext
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.item.ItemStack
@@ -29,6 +30,7 @@ import net.minecraft.screen.slot.SlotActionType
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.network.ServerPlayNetworkHandler
 import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.util.Formatting
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.World
@@ -65,6 +67,7 @@ class MessScreenHandler(
                 val tabs: Map<Level, Boolean> = Level.values().associate {
                     Pair(packetByteBuf.readEnumConstant(Level::class.java), packetByteBuf.readBoolean())
                 }
+                val indexedLimbs = packetByteBuf.readIntArray()
 
                 minecraftServer.execute {
                     val handler = serverPlayerEntity.currentScreenHandler as? MessScreenHandler ?: return@execute
@@ -73,7 +76,7 @@ class MessScreenHandler(
                     handler.owner?.updateTabs(handler.selectedTabs, serverPlayerEntity)
                     handler.owner?.updateSearchString(handler.searchString, serverPlayerEntity)
                     handler.owner?.updateScrollPosition(handler.scrollPosition, serverPlayerEntity)
-                    handler.updateInfo(false, searchString, scrollPosition)
+                    handler.updateServerLimbs(searchString, scrollPosition, indexedLimbs)
                     handler.createNewSlots()
                 }
             }
@@ -216,9 +219,7 @@ class MessScreenHandler(
         this.searchString = searchString
         this.scrollPosition = scrollPosition
 
-        updateLimbs()
-
-        if(syncToServer) { syncToServer() }
+        updateLimbs(syncToServer)
         if(playerInventory.player.world.isClient) { createNewSlots() }
     }
 
@@ -226,27 +227,49 @@ class MessScreenHandler(
         selectedTabs[selectedTabLevel] = !selectedTabs[selectedTabLevel]!!
     }
 
-    private fun updateLimbs() {
+    private fun updateServerLimbs(
+        searchString: String,
+        scrollPosition: Float,
+        indexedLimbs: IntArray)
+    {
+        this.searchString = searchString
+        this.scrollPosition = scrollPosition
+
+        tabbedLimbs = allLimbs.filter { selectedTabs[it.level] == true }
+        limbs = indexedLimbs.map { tabbedLimbs[it] }
+
+        limbsToDisplay = limbs
+            .sortedBy { it.isEmpty }
+            .filterIndexed { index, _ ->
+                val min = scrolledRows * MessScreen.COLUMNS
+                val max = min(limbs.size, MessScreen.INV_SIZE + min)
+                (min until max).contains(index)
+            }
+    }
+
+    private fun updateLimbs(syncToServer: Boolean) {
         tabbedLimbs = allLimbs.filter { selectedTabs[it.level] == true }
 
         limbs = tabbedLimbs.filter { limb ->
-            //TODO: Find a way to do this on the server
-//            val toolTip = limb.getStack().getTooltip(null, TooltipContext.Default.NORMAL)
-//                    .map { Formatting.strip(it.string)?.trim()?.toLowerCase() }
-//                    .first { !it.isNullOrEmpty() }
-                limb.getStack().item.name.string.toLowerCase().contains(searchString.toLowerCase())
+            val toolTip = limb.getStack().getTooltip(null, TooltipContext.Default.NORMAL)
+                .map { Formatting.strip(it.string)?.trim()?.toLowerCase() }
+                .first { !it.isNullOrEmpty() }
+            toolTip?.contains(searchString) ?: false
         }
 
         limbsToDisplay = limbs
-                .sortedBy { it.isEmpty }
-                .filterIndexed { index, _ ->
-                    val min = scrolledRows * MessScreen.COLUMNS
-                    val max = min(limbs.size, MessScreen.INV_SIZE + min)
-                    (min until max).contains(index)
-                }
+            .sortedBy { it.isEmpty }
+            .filterIndexed { index, _ ->
+                val min = scrolledRows * MessScreen.COLUMNS
+                val max = min(limbs.size, MessScreen.INV_SIZE + min)
+                (min until max).contains(index)
+            }
+
+        val indexedLimbs = limbs.map { tabbedLimbs.indexOf(it) }
+        if(syncToServer) { syncToServer(indexedLimbs) }
     }
 
-    public fun createNewSlots() {
+    fun createNewSlots() {
         slots.clear()
 
         // Magic numbers
@@ -284,7 +307,7 @@ class MessScreenHandler(
         }
     }
 
-    private fun syncToServer() {
+    private fun syncToServer(indexedLimbs: List<Int>) {
         if(!playerInventory.player.world.isClient) return
 
         val buffer = PacketByteBuf(Unpooled.buffer())
@@ -295,6 +318,8 @@ class MessScreenHandler(
             buffer.writeEnumConstant(it.key)
             buffer.writeBoolean(it.value)
         }
+
+        buffer.writeIntArray(indexedLimbs.toIntArray())
 
         ClientPlayNetworking.send(C2S_IDENTIFIER, buffer);
     }
