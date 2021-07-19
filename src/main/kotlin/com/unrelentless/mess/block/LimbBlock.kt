@@ -5,15 +5,13 @@ import com.unrelentless.mess.util.Level
 import com.unrelentless.mess.extensions.deserializeInnerStack
 import com.unrelentless.mess.extensions.serializeInnerStackToTag
 import net.fabricmc.fabric.api.`object`.builder.v1.block.FabricBlockSettings
-import net.minecraft.block.Block
-import net.minecraft.block.BlockRenderType
-import net.minecraft.block.BlockState
-import net.minecraft.block.BlockWithEntity
+import net.minecraft.block.*
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.client.item.TooltipContext
 import net.minecraft.entity.ItemEntity
 import net.minecraft.entity.LivingEntity
 import net.minecraft.entity.player.PlayerEntity
+import net.minecraft.inventory.SidedInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.loot.context.LootContext
 import net.minecraft.text.Text
@@ -30,7 +28,7 @@ import java.util.*
 import kotlin.math.min
 
 
-open class LimbBlock(settings: FabricBlockSettings, private val level: Level): BlockWithEntity(settings.nonOpaque()) {
+open class LimbBlock(settings: FabricBlockSettings, private val level: Level): BlockWithEntity(settings.nonOpaque()), InventoryProvider {
 
     override fun createBlockEntity(pos: BlockPos?, state: BlockState?): BlockEntity? = level.blockEntity(pos, state)
     override fun getRenderType(state: BlockState?): BlockRenderType = BlockRenderType.MODEL
@@ -118,5 +116,9 @@ open class LimbBlock(settings: FabricBlockSettings, private val level: Level): B
     private fun deposit(stack: ItemStack, player: PlayerEntity, hand: Hand, blockEntity: LimbBlockEntity) {
         player.setStackInHand(hand, blockEntity.inventory.depositStack(stack))
         blockEntity.onContentChanged(player)
+    }
+
+    override fun getInventory(state: BlockState?, world: WorldAccess?, pos: BlockPos?): SidedInventory? {
+        return (world?.getBlockEntity(pos) as? LimbBlockEntity)?.getInventory(state, world, pos)
     }
 }

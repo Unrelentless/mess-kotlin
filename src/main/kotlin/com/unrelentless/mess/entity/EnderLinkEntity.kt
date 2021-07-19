@@ -26,10 +26,6 @@ class EnderLinkEntity(world: World,
         handler?.execute()
         super.remove(reason)
     }
-//    override fun remove() {
-//        handler?.execute()
-//        super.remove()
-//    }
 
     override fun tick() {
         if((this as EyeOfEnderEntityAccessor).lifeSpan > MAX_LIFESPAN && !world.isClient) {
