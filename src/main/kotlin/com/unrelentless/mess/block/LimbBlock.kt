@@ -40,7 +40,7 @@ open class LimbBlock(settings: FabricBlockSettings, private val level: Level): B
         if (Block.getBlockFromItem(player.mainHandStack.item) is LimbBlock) return ActionResult.SUCCESS
 
         if (player.mainHandStack.isEmpty) {
-            withdraw(player, world, blockEntity)
+            withdraw(player, blockEntity)
         } else {
             deposit(player.mainHandStack, player, hand, blockEntity)
         }
@@ -107,7 +107,7 @@ open class LimbBlock(settings: FabricBlockSettings, private val level: Level): B
         }
     }
 
-    private fun withdraw(player: PlayerEntity, world: World, blockEntity: LimbBlockEntity) {
+    private fun withdraw(player: PlayerEntity, blockEntity: LimbBlockEntity) {
         val count = if(!player.isSneaking) {
             min(blockEntity.inventory.getStack().count, blockEntity.inventory.getStack().item.maxCount)
         } else 1
