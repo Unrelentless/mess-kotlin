@@ -8,6 +8,7 @@ import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.inventory.SidedInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.util.math.Direction
+import java.util.stream.IntStream
 import kotlin.math.min
 
 class LimbInventory(val level: Level, private val owner: LimbBlockEntity?): SidedInventory {
@@ -20,7 +21,9 @@ class LimbInventory(val level: Level, private val owner: LimbBlockEntity?): Side
     override fun canExtract(slot: Int, stack: ItemStack?, dir: Direction?): Boolean = true
     override fun getMaxCountPerStack(): Int = itemStacks.getOrElse(0){ ItemStack.EMPTY }.maxCount
     override fun clear() = itemStacks.clear()
-    override fun getAvailableSlots(side: Direction?): IntArray = IntArray(level.size)
+    override fun getAvailableSlots(side: Direction?): IntArray {
+        return IntStream.range(0, level.size).toArray()
+    }
     override fun canInsert(slot: Int, stack: ItemStack?, dir: Direction?): Boolean {
         return Block.getBlockFromItem(stack?.item) !is LimbBlock
     }
@@ -46,8 +49,11 @@ class LimbInventory(val level: Level, private val owner: LimbBlockEntity?): Side
 
     override fun setStack(slot: Int, stack: ItemStack) {
         if(stack.isEmpty) return
-        if(itemStacks.getOrNull(slot) == null) return
-        itemStacks[slot] = stack
+        when {
+            itemStacks.all { isEmpty } -> itemStacks.add(slot, stack)
+            itemStacks.getOrNull(slot) == null -> itemStacks.add(slot, stack)
+            else -> itemStacks[slot] = stack
+        }
         markDirty()
     }
 
