@@ -3,7 +3,6 @@ package com.unrelentless.mess.inventory
 import com.unrelentless.mess.block.LimbBlock
 import com.unrelentless.mess.block.entity.LimbBlockEntity
 import com.unrelentless.mess.util.Level
-import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable
 import net.minecraft.block.Block
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.inventory.SidedInventory
@@ -12,30 +11,43 @@ import net.minecraft.util.math.Direction
 import kotlin.math.min
 
 class LimbInventory(val level: Level, private val owner: LimbBlockEntity?): SidedInventory {
-    private var itemStack: ItemStack = ItemStack.EMPTY
+    private var itemStacks: MutableList<ItemStack> = mutableListOf()
 
-    override fun size(): Int = 1
-    override fun isEmpty(): Boolean = itemStack.isEmpty
-    override fun getStack(slot: Int): ItemStack = itemStack
+    override fun size(): Int = level.size
+    override fun isEmpty(): Boolean = itemStacks.all { it.isEmpty }
+    override fun getStack(slot: Int): ItemStack = itemStacks.getOrElse(slot){ ItemStack.EMPTY }
     override fun canPlayerUse(player: PlayerEntity?): Boolean = true
     override fun canExtract(slot: Int, stack: ItemStack?, dir: Direction?): Boolean = true
-    override fun getMaxCountPerStack(): Int = level.size * itemStack.item.maxCount
-    override fun clear() { itemStack = ItemStack.EMPTY }
-    override fun removeStack(slot: Int): ItemStack = removeStack(slot, itemStack.item.maxCount)
-    override fun getAvailableSlots(side: Direction?): IntArray = IntArray(1)
+    override fun getMaxCountPerStack(): Int = itemStacks.getOrElse(0){ ItemStack.EMPTY }.maxCount
+    override fun clear() = itemStacks.clear()
+    override fun getAvailableSlots(side: Direction?): IntArray = IntArray(level.size)
     override fun canInsert(slot: Int, stack: ItemStack?, dir: Direction?): Boolean {
         return Block.getBlockFromItem(stack?.item) !is LimbBlock
     }
-
+    override fun removeStack(slot: Int): ItemStack {
+        return removeStack(slot, itemStacks.getOrElse(slot){ ItemStack.EMPTY }.count)
+    }
     override fun removeStack(slot: Int, amount: Int): ItemStack {
-        val newStack: ItemStack = itemStack.split(amount)
+        if(itemStacks.isEmpty()) return ItemStack.EMPTY
+
+        val stack = itemStacks.last().split(amount)
+
+        if(itemStacks.getOrNull(itemStacks.lastIndex)?.isEmpty == true)
+            itemStacks.removeAt(itemStacks.lastIndex)
+
+        stack.increment(itemStacks
+            .getOrElse(itemStacks.lastIndex){ ItemStack.EMPTY }
+            .split(amount - stack.count)
+            .count)
+
         markDirty()
-        return newStack
+        return stack
     }
 
     override fun setStack(slot: Int, stack: ItemStack) {
-        itemStack = stack
-        if (stack.count > maxCountPerStack) { stack.count = maxCountPerStack }
+        if(stack.isEmpty) return
+        if(itemStacks.getOrNull(slot) == null) return
+        itemStacks[slot] = stack
         markDirty()
     }
 
@@ -43,21 +55,21 @@ class LimbInventory(val level: Level, private val owner: LimbBlockEntity?): Side
         if (owner == null || owner.world?.isClient == true) return
 
         owner.markDirty()
-        if(owner.world?.isClient == false) { (owner as? BlockEntityClientSerializable)?.sync() }
+        if(owner.world?.isClient == false) owner.sync()
     }
 
-    fun getStack(): ItemStack = getStack(0)
-    fun withdrawStack(count: Int) = removeStack(0, count)
+    fun getStack(): ItemStack = getStack(itemStacks.lastIndex)
+    fun withdrawStack(count: Int) = removeStack(itemStacks.lastIndex, count)
     fun depositStack(stack: ItemStack): ItemStack = depositStack(stack, stack.count)
     fun depositStack(stack: ItemStack, count: Int): ItemStack {
         if (Block.getBlockFromItem(stack.item) is LimbBlock) return stack
 
-        if (itemStack.isEmpty) {
-            itemStack = stack.split(count)
-        } else if (ItemStack.areItemsEqual(itemStack, stack)) {
-            val countToDeposit = min(count, maxCountPerStack - itemStack.count)
-            itemStack.increment(countToDeposit)
-            stack.decrement(countToDeposit)
+        if (itemStacks.isEmpty()) {
+            itemStacks.add(stack.split(count))
+        } else if (ItemStack.areItemsEqual(itemStacks.last(), stack)) {
+            val firstStack = stack.split(min(count, count - itemStacks.last().count))
+            itemStacks.last().increment(firstStack.count)
+            if(firstStack.count < count) itemStacks.add(stack.split(count - firstStack.count))
         }
 
         markDirty()

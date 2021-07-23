@@ -106,10 +106,10 @@ open class LimbBlock(settings: FabricBlockSettings, private val level: Level): B
     }
 
     private fun withdraw(player: PlayerEntity, blockEntity: LimbBlockEntity) {
-        val count = if(!player.isSneaking) {
-            min(blockEntity.inventory.getStack().count, blockEntity.inventory.getStack().item.maxCount)
-        } else 1
-        player.inventory.offerOrDrop(blockEntity.inventory.withdrawStack(count))
+//        val count = if(!player.isSneaking) {
+//            min(blockEntity.inventory.getStack().count, blockEntity.inventory.getStack().item.maxCount)
+//        } else 1
+        player.inventory.offerOrDrop(blockEntity.inventory.withdrawStack(blockEntity.inventory.getStack().item.maxCount))
         blockEntity.onContentChanged(player)
     }
 
